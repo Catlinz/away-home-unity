@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class ShipMovementComponent : MonoBehaviour {
+public class ShipMovement : MonoBehaviour
+{
 
     [Header("Turn")]
     /** The max role that occurs when the ship turns */
@@ -49,8 +50,7 @@ public class ShipMovementComponent : MonoBehaviour {
         float curHeading = heading;
         float headingDelta = Mathf.DeltaAngle(curHeading, desiredHeading);
 
-        if (headingDelta != 0f && turnScale != 0f) 
-        {
+        if (headingDelta != 0f && turnScale != 0f) {
             float curTurnRate = turnRate;
             float maxTurnDelta = maxTurnAcceleration * deltaTime;
             float scaledMaxTurnRate = maxTurnRate * turnScale;
@@ -119,16 +119,17 @@ public class ShipMovementComponent : MonoBehaviour {
 
 
     // Use this for initialization after Awake().
-    void Start () {
+    void Start() {
         heading = gameObject.transform.rotation.eulerAngles.y * Mathf.Rad2Deg;
         desiredHeading = heading;
 
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
+        rb.constraints = RigidbodyConstraints.FreezePositionY;
     }
-	
-	// Update during the physics steps.
-	private void FixedUpdate () {
+
+    // Update during the physics steps.
+    private void FixedUpdate() {
 
         Vector3 rotation = transform.rotation.eulerAngles;
 
@@ -142,5 +143,5 @@ public class ShipMovementComponent : MonoBehaviour {
 
         Vector3 newVelocity = ComputeVelocity(Time.deltaTime, rb.velocity);
         rb.velocity = newVelocity;
-	}
+    }
 }

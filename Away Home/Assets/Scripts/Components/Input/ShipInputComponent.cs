@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class ShipInputComponent : MonoBehaviour {
 
-    private ShipMovementComponent movement;
+    private ShipMovement movement;
 
 	// Use this for initialization
 	void Start () {
-        movement = GetComponent<ShipMovementComponent>();
+        movement = GetComponent<ShipMovement>();
         InputManager.Get();
 	}
 	
