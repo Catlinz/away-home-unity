@@ -23,6 +23,9 @@ ExportedObj/
 *.svd
 *.pdb
 
+#Blender backups 
+*.blend1
+
 # Unity3D generated meta files
 *.pidb.meta
 
