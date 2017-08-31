@@ -15,6 +15,6 @@ public interface IShipModule {
 	/**
 	 * Initialize the component from the specified asset.
 	 */
-	void InitFromAsset(InstallableModuleAsset asset);
+	void InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocket socket);
 
 }

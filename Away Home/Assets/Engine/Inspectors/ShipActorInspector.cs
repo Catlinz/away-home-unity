@@ -10,16 +10,72 @@ public class ShipActorInspector : Editor {
 	private Transform shipTx;
 	private Quaternion shipRot;
 
-	private void OnSceneGUI() {
-		ship = target as ShipActorComponent;
-		shipTx = ship.transform;
-		shipRot = (Tools.pivotRotation == PivotRotation.Local) ? shipTx.rotation : Quaternion.identity;
+    private bool inspectorShowSockets = true;
+    private Dictionary<string, bool> showSocket = new Dictionary<string, bool>();
+
+    private static GUILayoutOption socketButtonWidth = GUILayout.Width(20f);
+
+    public override void OnInspectorGUI() {
+        serializedObject.Update();
+
+        // Draw the basic fields.
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("maxCpu"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("maxPower"));
+
+        // Draw the sockets.
+        InspectorHandleSockets();
+
+        serializedObject.ApplyModifiedProperties();
+    }
+
+    private void InspectorDrawSocket(SerializedProperty socket, int index) {
+        if (!showSocket.ContainsKey(socket.propertyPath)) {
+            showSocket.Add(socket.propertyPath, false);
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        showSocket[socket.propertyPath] = EditorGUILayout.Foldout(showSocket[socket.propertyPath], socket.displayName, true);
+        if (GUILayout.Button("+", EditorStyles.miniButtonLeft, socketButtonWidth)) {
+
+        }
+        if (GUILayout.Button("-", EditorStyles.miniButtonMid, socketButtonWidth)) {
+
+        }
+        if (GUILayout.Button("\u21b4", EditorStyles.miniButtonRight, socketButtonWidth)) {
+
+        }
+        EditorGUILayout.EndHorizontal();
+        if (showSocket[socket.propertyPath]) {
+            EditorGUILayout.PropertyField(socket);
+        }
+    }
+
+    private void InspectorHandleSockets() {
+        // Draw the sockets.
+        SerializedProperty sockets = serializedObject.FindProperty("sockets");
+        inspectorShowSockets = EditorGUILayout.Foldout(inspectorShowSockets, sockets.displayName, true);
+        if (inspectorShowSockets) {
+            EditorGUI.indentLevel += 1;
+            for (int i = 0; i < sockets.arraySize; ++i) {
+                InspectorDrawSocket(sockets.GetArrayElementAtIndex(i), i);
+            }
+        }
+
+        if (GUILayout.Button("Add Socket")) {
+            sockets.arraySize += 1;
+        }
+    }
+
+    private void OnSceneGUI() {
+        ship = target as ShipActorComponent;
+        shipTx = ship.transform;
+        shipRot = (Tools.pivotRotation == PivotRotation.Local) ? shipTx.rotation : Quaternion.identity;
 
 
-		for (int i = 0; i < ship.sockets.Length; ++i) {
-			SceneGUIHandleSocket(ref ship.sockets[i]);
-		}
-	}
+        for (int i = 0; i < ship.sockets.Length; ++i) {
+            SceneGUIHandleSocket(ref ship.sockets[i]);
+        }
+    }
 
 	/**
 	 * Handle the drawing of the socket for the OnSceneGUI method

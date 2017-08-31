@@ -27,4 +27,15 @@ public struct ShipSocket {
     [Header("Transform")]
 	public Vector3 position;
 	public Quaternion rotation;
+
+    public ShipSocket(float cpu, float power) {
+        socketName = null;
+        maxCpuBandwidth = cpu;
+        maxPowerOutput = power;
+        arcLimits = new SocketArc();
+        position = Vector3.zero;
+        rotation = Quaternion.identity;
+    }
+
+    public static readonly ShipSocket empty = new ShipSocket(0, 0);
 }

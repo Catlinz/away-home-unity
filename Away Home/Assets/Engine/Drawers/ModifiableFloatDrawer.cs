@@ -17,18 +17,16 @@ public class ModifiableFloatDrawer : PropertyDrawer {
 		var indent = EditorGUI.indentLevel;
 		EditorGUI.indentLevel = 0;
 
+        contentRect.width = 8;
+        EditorGUI.LabelField(contentRect, "(");
         // Draw fields - passs GUIContent.none to each so they are drawn without labels
+        contentRect.x += contentRect.width + 2;
         contentRect.width = 40;
 		EditorGUI.PropertyField(contentRect, property.FindPropertyRelative("initial"), GUIContent.none);
 
-        contentRect.x += contentRect.width + 5;
-        contentRect.width = 10;
-		EditorGUI.LabelField(contentRect, "x");
-
-        contentRect.x += contentRect.width + 5;
-        contentRect.width = 30;
-		EditorGUI.PropertyField(contentRect, property.FindPropertyRelative("modifier"), GUIContent.none);
-
+        contentRect.x += contentRect.width + 1;
+        contentRect.width = 50;
+		EditorGUI.LabelField(contentRect, string.Format("+ {0}) x {1}", property.FindPropertyRelative("added").floatValue, property.FindPropertyRelative("modifier").floatValue));
 		// Set indent back to what it was
 		EditorGUI.indentLevel = indent;
 

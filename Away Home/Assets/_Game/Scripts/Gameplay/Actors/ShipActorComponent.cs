@@ -26,6 +26,16 @@ public class ShipActorComponent : MonoBehaviour {
 
     public InstallableModuleAsset test;
 
+    /**
+     * Add a socket to the list of sockets the Ship has.
+     */
+     public void AddSocket() {
+        ShipSocket[] newSockets = new ShipSocket[sockets.Length + 1];
+        sockets.CopyTo(newSockets, 0);
+        newSockets[sockets.Length] = ShipSocket.empty;
+        sockets = newSockets;
+    }
+
 	/**
 	 * Test to see if a component can be enabled based on power / CPU usage.
 	 */
@@ -86,7 +96,7 @@ public class ShipActorComponent : MonoBehaviour {
 
         GameObject go = GameObject.Instantiate(asset.prefab, socket.position, socket.rotation, gameObject.transform);
         IShipModule mod = go.GetComponent<IShipModule>();
-        mod.InitFromAsset(asset);
+        mod.InitFromAssetInSocket(asset, socket);
 
 		// Try and enable the component, if we can.
 		if (CanEnableModule(mod)) {
