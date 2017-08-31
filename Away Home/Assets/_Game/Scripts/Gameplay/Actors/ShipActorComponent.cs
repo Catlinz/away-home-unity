@@ -24,6 +24,8 @@ public class ShipActorComponent : MonoBehaviour {
 
 	private ShipMovementComponent movement;
 
+    public InstallableModuleAsset test;
+
 	/**
 	 * Test to see if a component can be enabled based on power / CPU usage.
 	 */
@@ -34,7 +36,7 @@ public class ShipActorComponent : MonoBehaviour {
 	/**
 	 * Test to see if we can install the specified component into the ship.
 	 */
-	public OperationResult CanInstallModule(InstallableModuleAsset asset, ShipSocketComponent socket) {
+	public OperationResult CanInstallModule(InstallableModuleAsset asset, ShipSocket socket) {
 		if (socket.maxPowerOutput < asset.idlePowerUsage) {
 			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset in socket, not enough power output.");
 		} 
@@ -55,55 +57,51 @@ public class ShipActorComponent : MonoBehaviour {
 	}
 
 	/**
-	 * Try and find the ShipSocketComponent with the specified name.
+	 * Try and find the ShipSocket with the specified name.
 	 */
-	public ShipSocketComponent GetSocket(string socketName) {
-		ShipSocketComponent[] sockets = GetComponentsInChildren<ShipSocketComponent>(true);
-
-		foreach (ShipSocketComponent socket in sockets) {
-			if (socket.name == socketName) {
-				return socket;
-			}
-		}
-
-		return null;
+	public ShipSocket GetSocket(string socketName) {
+        for (int i = 0; i < sockets.Length; ++i) {
+            if (sockets[i].socketName == socketName) {
+                return sockets[i];
+            }
+        }
+        return new ShipSocket();
 	}
 
 	/**
 	 * Try and install the given component into the specified slot on the ship.
 	 */
 	public OperationResult InstallModule(InstallableModuleAsset asset, string socketName) {
-		ShipSocketComponent socket = GetSocket(socketName);
+		ShipSocket socket = GetSocket(socketName);
 
 		OperationResult canInstall = CanInstallModule(asset, socket);
 		if (canInstall.status != OperationResult.Status.OK) {
 			return canInstall; /* Return the reason we failed to install. */
 		}
 
-		// Create the appropriate component type and add it to the socket.
-		System.Type scriptType = asset.GetScriptType();
-		if (scriptType == null) {
-			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset, invalid script type.");
+		// Create The prefab and attach it to the root object in the right place.
+		if (asset.prefab == null) {
+			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset, invalid Prefab.");
 		}
-		IShipModule module = socket.InstallModule(asset);
+
+        GameObject go = GameObject.Instantiate(asset.prefab, socket.position, socket.rotation, gameObject.transform);
+        IShipModule mod = go.GetComponent<IShipModule>();
+        mod.InitFromAsset(asset);
 
 		// Try and enable the component, if we can.
-		if (CanEnableModule(module)) {
-			module.EnableOnShip(this);
+		if (CanEnableModule(mod)) {
+			mod.EnableOnShip(this);
 			return OperationResult.OK; 
 		}
 		else {
 			return new OperationResult(OperationResult.Status.PARTIAL, "Not enough power or CPU bandwidth to enable the Module.");
 		}
-
-
-
-
 	}
 
 	// Use this for initialization
 	void Start () {
 		movement = GetComponent<ShipMovementComponent>();
+        InstallModule(test, "TEST");
 	}
 	
 	// Update is called once per frame

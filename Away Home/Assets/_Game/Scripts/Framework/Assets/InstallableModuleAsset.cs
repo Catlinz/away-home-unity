@@ -5,8 +5,8 @@ using UnityEngine;
 public class InstallableModuleAsset : ScriptableObject {
 
     [Header("Type")]
-    /** The name of the MonoBehaviour Module script to create */
-    public string behaviourScript;
+    /** The prefab that includes the script and model data */
+    public GameObject prefab;
 
     [Space(10)]
     [Header("Stats")]
@@ -15,15 +15,4 @@ public class InstallableModuleAsset : ScriptableObject {
 
     /** The amount of power required to be installed. */
     public float idlePowerUsage;
-
-	/** Get the type of script to pass to AddComponent(type). */
-	public System.Type GetScriptType() {
-		var type = System.Type.GetType(behaviourScript);
-		if (type == null || !typeof(Component).IsAssignableFrom(type)) { 
-			return null;
-		}
-		else {
-			return type;
-		}
-	}
 }

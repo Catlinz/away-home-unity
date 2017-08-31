@@ -3,6 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
+public struct SocketArc {
+    public float up;
+    public float down;
+    public float left;
+    public float right;
+}
+
+[System.Serializable]
 public struct ShipSocket {
 
 	/** The name of the socket */
@@ -14,24 +22,9 @@ public struct ShipSocket {
 	/** The max power that the slot can supply. */
 	public ModifiableFloat maxPowerOutput;
 
-	/** The minimum pitch angle */
-	public float minPitch;
+    public SocketArc arcLimits;
 
-	/** The maximum pitch angle */
-	public float maxPitch;
-
-	/** The start of the allowed Yaw range (sweeps clockwise) */
-	public float yawStart;
-
-	/** The end of the allowed Yaw range (sweeps clockwise) */
-	public float yawEnd;
-
+    [Header("Transform")]
 	public Vector3 position;
 	public Quaternion rotation;
-
-	//	public IShipModule InstallModule(InstallableModuleAsset asset) {
-	//		IShipModule mod = gameObject.AddComponent(asset.GetScriptType()) as IShipModule;
-	//		mod.InitFromAssetInSocket(asset, this);
-	//		return mod;
-	//	}
 }

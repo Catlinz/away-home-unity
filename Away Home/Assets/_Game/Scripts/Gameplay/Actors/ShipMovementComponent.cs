@@ -87,7 +87,7 @@ public class ShipMovementComponent : MonoBehaviour
         float desiredSpeed = throttle * maxSpeed;
         float maxAccel = maxAcceleration;
 
-        Vector3 desiredVelocity = AHMath.HeadingAngleToVector(heading) * desiredSpeed;
+        Vector3 desiredVelocity = AHMath.HeadingAngleToVectorXZ(heading) * desiredSpeed;
         Vector3 newVelocity = Vector3.MoveTowards(oldVelocity, desiredVelocity, deltaTime * maxAccel);
 
         return newVelocity;
@@ -101,7 +101,7 @@ public class ShipMovementComponent : MonoBehaviour
 
     /** Set the desired heading vector */
     public void SetDesiredHeading(Vector3 headingVector) {
-        desiredHeading = AHMath.VectorToHeadingAngle(headingVector);
+        desiredHeading = AHMath.VectorXZToHeadingAngle(headingVector);
         turnScale = headingVector.magnitude;
     }
 

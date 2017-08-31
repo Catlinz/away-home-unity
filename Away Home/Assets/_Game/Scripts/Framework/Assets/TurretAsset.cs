@@ -23,15 +23,6 @@ public class TurretAsset : InstallableModuleAsset {
     /** The time (in seconds) to reload the turret */
     public float reloadTimeSec;
 
-    /** A reference to the mesh for the base of the gun (Part that Yaws for a turret) */
-    public Mesh baseMesh;
-
-    /** A reference to the mesh for the barrel of the gun (Part that pitches for a turret) */
-    public Mesh barrelMesh;
-
-    /** The number o fbarrels the weapon has */
-    public int numBarrels;
-
     /** Sounds to play each time we fire */
     public AudioClip activationSound;
 }

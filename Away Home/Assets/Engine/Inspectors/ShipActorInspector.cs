@@ -48,10 +48,32 @@ public class ShipActorInspector : Editor {
 				}
 			}
 		}
-		else {
-			Color color = Handles.color;
-			Handles.color = new Color(1, 1, 1, 0.1f);
-			Handles.DrawSolidDisc(point, rot * Vector3.up, 0.1f * HandleUtility.GetHandleSize(point));
-		}
+
+        SceneGUIDrawSocket(ref socket, point, rot);
 	}
+
+    private void SceneGUIDrawSocket(ref ShipSocket socket, Vector3 position, Quaternion rotation) {
+        Matrix4x4 mat4 = Handles.matrix;
+        Color color = Handles.color;
+
+        Handles.matrix = Matrix4x4.TRS(position, rotation, Vector3.one);
+
+        Handles.color = new Color(1, 0, 0, 0.3f);
+        Handles.DrawSolidArc(
+            Vector3.zero, Vector3.up, 
+            AHMath.HeadingAngleToVectorXZ(socket.arcLimits.left), 
+            socket.arcLimits.left + socket.arcLimits.right, 
+            0.05f
+            );
+        Handles.color = new Color(0, 1, 0, 0.3f);
+        Handles.DrawSolidArc(
+            Vector3.zero, Vector3.left,
+            AHMath.HeadingAngleToVectorYZ(-socket.arcLimits.down),
+            socket.arcLimits.down + socket.arcLimits.up,
+            0.05f
+            );
+        //Handles.DrawWireCube(Vector3.zero, new Vector3(0.5f, 0.5f, 0.5f));
+        Handles.matrix = mat4;
+        Handles.color = color;
+    }
 }

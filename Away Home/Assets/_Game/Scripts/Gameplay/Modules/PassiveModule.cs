@@ -22,7 +22,7 @@ public class PassiveModule : MonoBehaviour, IShipModule {
 	/**
 	 * Initialize the passive module from the asset.
 	 */
-	public void InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocketComponent socket) {
+	public void InitFromAsset(InstallableModuleAsset asset) {
 		moduleAsset = asset as PassiveModuleAsset;
 	}
 
