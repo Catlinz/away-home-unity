@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The component that controls the Movement of the ship.
+/// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ShipMovementComponent : MonoBehaviour
 {

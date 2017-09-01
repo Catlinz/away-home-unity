@@ -3,10 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-// Custom property drawer for ShipSockets.
+/// <summary>
+/// A custom PropertyDrawer for drawing the movement arcs for a socket in the Inspector GUI.
+/// </summary>
 [CustomPropertyDrawer(typeof(SocketArc))]
 public class SocketArcDrawer : PropertyDrawer {
 
+    /// <summary>
+    /// Draws the SocketArc into the Inspector GUI as four inputs for 
+    /// left, right, up, down.
+    /// </summary>
+    /// <param name="position"></param>
+    /// <param name="property"></param>
+    /// <param name="label"></param>
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
         // Being the property control
         label = EditorGUI.BeginProperty(position, label, property);

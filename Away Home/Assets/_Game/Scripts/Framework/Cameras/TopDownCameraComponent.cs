@@ -2,11 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// A basic Top-down camera that follows a target (usually a ship).
+/// </summary>
 public class TopDownCameraComponent : MonoBehaviour {
 
+    /// <summary>The target that the camera will follow.</summary>
     public Transform target;
 
+    /// <summary>The vertical distance from the target.</summary>
     public float distance = 10f;
+    /// <summary>The speed of the camera follow movement.</summary>
     public float speed = 0.2f;
 
     private Transform tx;
@@ -20,11 +26,9 @@ public class TopDownCameraComponent : MonoBehaviour {
         InitializeCamera();
     }
 
-    // Update is called once per frame
-    void Update () {
-
-    }
-
+    /// <summary>
+    /// Update the camera position based on the target's position.
+    /// </summary>
     private void FixedUpdate() {
         Vector3 targetPos = target.position;
         Vector3 thisPos = tx.position;
@@ -35,9 +39,11 @@ public class TopDownCameraComponent : MonoBehaviour {
             tx.position = Vector3.Lerp(thisPos, targetPos, speed);
 
         }
-        
     }
 
+    /// <summary>
+    /// Initialize the camera to track the target.
+    /// </summary>
     private void InitializeCamera() {
         tx = GetComponent<Transform>();
 

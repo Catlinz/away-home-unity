@@ -2,17 +2,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The base class for any asset for an Installable Ship Module such as 
+/// a turret or a passive armour booster.
+/// </summary>
 public class InstallableModuleAsset : ScriptableObject {
 
+    /// <summary>The prefab that is used to mount the module on the ship.</summary>
     [Header("Type")]
-    /** The prefab that includes the script and model data */
     public GameObject prefab;
 
+    /// <summary>The amount of CPU resources required to be enabled / installed.</summary>
     [Space(10)]
     [Header("Stats")]
-    /** The amount of CPU required to be installed. */
     public float idleCpuUsage;
 
-    /** The amount of power required to be installed. */
+    /// <summary>The amount of power required to be enabled / installed.</summary>
     public float idlePowerUsage;
 }

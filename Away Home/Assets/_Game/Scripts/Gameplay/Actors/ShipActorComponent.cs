@@ -2,50 +2,64 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The ShipActorComponent is the core foundation of the logic and data 
+/// that makes an object into a ship.  
+/// <para>
+/// It contains the ship stats and info, the 
+/// list of sockets that modules can be attached to and the logic for installing 
+/// and interacting with the modules.
+/// </para>
+/// </summary>
 [RequireComponent(typeof(ShipMovementComponent))]
 public class ShipActorComponent : MonoBehaviour {
 
-	// The maximum Power the ship can supply.
-	public ModifiableFloat maxPower = 0;	
-	// The maximum CPU bandwidth the ship can supply.
-	public ModifiableFloat maxCpu = 0;	
+    /// <summary>The maximum CPU resources the ship can supply to modules.</summary>
+    public ModifiableFloat maxCpu = 0;
+    /// <summary>The maximum power the ship can supply to modules.</summary>
+    public ModifiableFloat maxPower = 0;
 
 	private float usedPower = 0;
 	private float usedCpu = 0;
 
+    /// <summary>The currently available power that the ship has for use.</summary>
 	public float AvailablePower {
 		get { return maxPower - usedPower; }
 	}
+    /// <summary>The currently available CPU resources that the ship has for use.</summary>
 	public float AvailableCpu {
 		get { return maxCpu - usedCpu; }
 	}
 
+    /// <summary>The list of ShipSockets that modules can be installed into.</summary>
 	public ShipSocket[] sockets;
 
+    /// <summary>The ships movement is controlled by this.</summary>
 	private ShipMovementComponent movement;
 
     public InstallableModuleAsset test;
 
-    /**
-     * Add a socket to the list of sockets the Ship has.
-     */
-     public void AddSocket() {
-        ShipSocket[] newSockets = new ShipSocket[sockets.Length + 1];
-        sockets.CopyTo(newSockets, 0);
-        newSockets[sockets.Length] = ShipSocket.empty;
-        sockets = newSockets;
-    }
-
-	/**
-	 * Test to see if a component can be enabled based on power / CPU usage.
-	 */
+	/// <summary>
+    /// Check to see if a module can be enabled, that is, if there is enough 
+    /// resources for it to be enabled.
+    /// </summary>
+    /// <param name="module">The ship module to enable.</param>
+    /// <returns>True if there are enough resources to enable the module.</returns>
 	public bool CanEnableModule(IShipModule module) {
 		return (AvailableCpu >= module.IdleCpuUsage) && (AvailablePower >= module.IdlePowerUsage);
 	}
 
-	/**
-	 * Test to see if we can install the specified component into the ship.
-	 */
+	/// <summary>
+    /// Check to see if we can install a module in a specific socket.  If the module 
+    /// requires more CPU or power than the socket can supply, then the module cannot 
+    /// be installed into it.
+    /// </summary>
+    /// <param name="asset">The InstallableModuleAsset to see if can be installed.</param>
+    /// <param name="socket">The ShipSocket we want to install the module into.</param>
+    /// <returns>
+    /// An OperationResult indicating either why the module cannot be installed, or OK if the 
+    /// module can be installed.
+    /// </returns>
 	public OperationResult CanInstallModule(InstallableModuleAsset asset, ShipSocket socket) {
 		if (socket.maxPowerOutput < asset.idlePowerUsage) {
 			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset in socket, not enough power output.");
@@ -66,21 +80,31 @@ public class ShipActorComponent : MonoBehaviour {
 		usedPower += power;
 	}
 
-	/**
-	 * Try and find the ShipSocket with the specified name.
-	 */
+	/// <summary>
+    /// Get the details about a ship socket by name.
+    /// </summary>
+    /// <param name="socketName">The name of the socket to get.</param>
+    /// <returns>The ship socket, if found, otherwise returns the empty socket.</returns>
 	public ShipSocket GetSocket(string socketName) {
         for (int i = 0; i < sockets.Length; ++i) {
             if (sockets[i].socketName == socketName) {
                 return sockets[i];
             }
         }
-        return new ShipSocket();
+        return ShipSocket.empty;
 	}
 
-	/**
-	 * Try and install the given component into the specified slot on the ship.
-	 */
+	/// <summary>
+    /// Install a module into the specified ShipSocket.  It can fail, and if it does will 
+    /// return a message as to why it fails.
+    /// </summary>
+    /// <param name="asset">The installable module we want to install on the ship.</param>
+    /// <param name="socketName">The name of the socket we want to install the module into.</param>
+    /// <returns>
+    /// An OperationResult that indicates if the module was installed or not.  If the module couldn't be installed, 
+    /// a FAIL result is returned with a message indicating why.  If the module was installed but couldn't be enabled, 
+    /// a PARTIAL result is returned with a message indicating why.  Otherwise, an OK result is returned.
+    /// </returns>
 	public OperationResult InstallModule(InstallableModuleAsset asset, string socketName) {
 		ShipSocket socket = GetSocket(socketName);
 

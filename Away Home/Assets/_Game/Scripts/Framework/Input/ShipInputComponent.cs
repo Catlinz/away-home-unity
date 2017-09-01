@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// A component that translates user input into ship movement commands.
+/// </summary>
 public class ShipInputComponent : MonoBehaviour {
 
     private ShipMovementComponent movement;
