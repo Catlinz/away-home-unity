@@ -35,7 +35,7 @@ public class ShipActorComponent : MonoBehaviour {
     /// <param name="module">The ship module to enable.</param>
     /// <returns>True if there are enough resources to enable the module.</returns>
 	public bool CanEnableModule(IShipModule module) {
-		return (computer.AvailableCpu >= module.IdleCpuUsage) && (power.AvailablePower >= module.IdlePowerUsage);
+		return (computer.AvailableCpu >= module.IdleCpuUsage) && (power.FreeEnergy >= module.IdlePowerUsage);
 	}
 
 	/// <summary>
