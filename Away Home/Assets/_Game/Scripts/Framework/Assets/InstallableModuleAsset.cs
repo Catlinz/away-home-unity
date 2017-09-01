@@ -15,8 +15,8 @@ public class InstallableModuleAsset : ScriptableObject {
     /// <summary>The amount of CPU resources required to be enabled / installed.</summary>
     [Space(10)]
     [Header("Stats")]
-    public float idleCpuUsage;
+    public int idleCpuUsage;
 
     /// <summary>The amount of power required to be enabled / installed.</summary>
-    public float idlePowerUsage;
+    public int idlePowerUsage;
 }

@@ -8,9 +8,9 @@ using UnityEngine;
 public interface IShipModule {
 
     /// <summary>The amount of power consumed by the Module when enabled.</summary>
-	float IdlePowerUsage { get; }
+	int IdlePowerUsage { get; }
     /// <summary>The amount of CPU resources consumed by the Module when enabled.</summary>
-	float IdleCpuUsage { get; }
+	int IdleCpuUsage { get; }
 
     /// <summary>Called to try and enable the module a ShipActorComponent.</summary>
     /// <param name="ship">The ship to enable the Module for.</param>

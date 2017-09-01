@@ -14,22 +14,11 @@ using UnityEngine;
 [RequireComponent(typeof(ShipMovementComponent))]
 public class ShipActorComponent : MonoBehaviour {
 
-    /// <summary>The maximum CPU resources the ship can supply to modules.</summary>
-    public ModifiableFloat maxCpu = 0;
-    /// <summary>The maximum power the ship can supply to modules.</summary>
-    public ModifiableFloat maxPower = 0;
+    /// <summary>The state of the computer system for the ship.</summary>
+    public ComputerSystem computer;
 
-	private float usedPower = 0;
-	private float usedCpu = 0;
-
-    /// <summary>The currently available power that the ship has for use.</summary>
-	public float AvailablePower {
-		get { return maxPower - usedPower; }
-	}
-    /// <summary>The currently available CPU resources that the ship has for use.</summary>
-	public float AvailableCpu {
-		get { return maxCpu - usedCpu; }
-	}
+    /// <summary>The state of the power system for the ship.</summary>
+    public PowerSystem power;
 
     /// <summary>The list of ShipSockets that modules can be installed into.</summary>
 	public ShipSocket[] sockets;
@@ -46,7 +35,7 @@ public class ShipActorComponent : MonoBehaviour {
     /// <param name="module">The ship module to enable.</param>
     /// <returns>True if there are enough resources to enable the module.</returns>
 	public bool CanEnableModule(IShipModule module) {
-		return (AvailableCpu >= module.IdleCpuUsage) && (AvailablePower >= module.IdlePowerUsage);
+		return (computer.AvailableCpu >= module.IdleCpuUsage) && (power.AvailablePower >= module.IdlePowerUsage);
 	}
 
 	/// <summary>
@@ -70,14 +59,6 @@ public class ShipActorComponent : MonoBehaviour {
 		else {
 			return OperationResult.OK;
 		}
-	}
-
-	public void ConsumeCpu(float cpu) {
-		usedCpu += cpu;
-	}
-
-	public void ConsumePower(float power) {
-		usedPower += power;
 	}
 
 	/// <summary>

@@ -27,8 +27,8 @@ public class ShipActorInspector : Editor {
         serializedObject.Update();
 
         // Draw the basic fields.
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("maxCpu"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("maxPower"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("computer"), true);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("power"), true);
         EditorGUILayout.Space();
         // Draw the sockets.
         InspectorHandleSockets();

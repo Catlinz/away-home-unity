@@ -12,20 +12,20 @@ public class PassiveModule : MonoBehaviour, IShipModule {
 	private PassiveModuleAsset moduleAsset;
 
     /// <summary>The amount of power consumed by the Module when enabled.</summary>
-	public float IdlePowerUsage {
+	public int IdlePowerUsage {
 		get { return moduleAsset.idlePowerUsage; }
 	}
 
     /// <summary>The amount of CPU resources consumed by the Module when enabled.</summary>
-	public float IdleCpuUsage {
+	public int IdleCpuUsage {
 		get { return moduleAsset.idleCpuUsage; }
 	}
 
     /// <summary>Called to try and enable the module a ShipActorComponent.</summary>
     /// <param name="ship">The ship to enable the Module for.</param>
 	public virtual void EnableOnShip(ShipActorComponent ship) {
-		ship.ConsumeCpu(IdleCpuUsage);
-		ship.ConsumePower(IdlePowerUsage);
+        ship.computer.UseCpu(IdleCpuUsage);
+        ship.power.Use(IdlePowerUsage);
 	}
 
 	/// <summary>Initializes the Module component from an asset for the module.</summary>
