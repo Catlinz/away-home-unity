@@ -16,7 +16,14 @@ public class ShipSocketDrawer : PropertyDrawer {
     /// <param name="label">The label for the property.</param>
     /// <returns>The height the property needs to draw.</returns>
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label) {
-        return (EditorGUIUtility.singleLineHeight * 7) + EditorGUIUtility.standardVerticalSpacing * 10;
+		float baseHeight = (EditorGUIUtility.singleLineHeight * 7) + EditorGUIUtility.standardVerticalSpacing * 10;
+		if (!EditorGUIUtility.wideMode) {
+			return baseHeight + (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 2;
+		}
+		else {
+			return baseHeight;
+		}
+        
     }
 
     /// <summary>
@@ -40,7 +47,7 @@ public class ShipSocketDrawer : PropertyDrawer {
         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
         EditorGUI.PropertyField(rect, property.FindPropertyRelative("maxCpuBandwidth"));
         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
-        EditorGUI.PropertyField(rect, property.FindPropertyRelative("maxPowerOutput"));
+		EditorGUI.PropertyField(rect, property.FindPropertyRelative("maxEnergyOutput"));
         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
         EditorGUI.PropertyField(rect, property.FindPropertyRelative("arcLimits"));
         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
@@ -48,6 +55,8 @@ public class ShipSocketDrawer : PropertyDrawer {
 
         // Draw the rotation as Euler angles instead of a quaternion.
         rect.y += (rect.height * 2) + EditorGUIUtility.standardVerticalSpacing * 5;
+		if (!EditorGUIUtility.wideMode) { rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing; }
+
         EditorGUI.BeginChangeCheck();
         SerializedProperty rotProp = property.FindPropertyRelative("rotation");
         Vector3 rot = rotProp.quaternionValue.eulerAngles;

@@ -33,8 +33,8 @@ public struct ShipSocket {
 	/// <summary>The maximum CPU bandwidth the socket can supply.</summary>
 	public ModifiableFloat maxCpuBandwidth;
 
-    /// <summary>The maximum power the socket can supply.</summary>
-    public ModifiableFloat maxPowerOutput;
+    /// <summary>The maximum energy the socket can supply.</summary>
+	public ModifiableFloat maxEnergyOutput;
 
     /// <summary>The yaw and pitch limits for a turret in this socket.</summary>
     public SocketArc arcLimits;
@@ -45,10 +45,10 @@ public struct ShipSocket {
     /// <summary>The rotation of the socket relative to the ship.</summary>
 	public Quaternion rotation;
 
-    public ShipSocket(float cpu, float power) {
+    public ShipSocket(float cpu, float energy) {
         socketName = null;
         maxCpuBandwidth = cpu;
-        maxPowerOutput = power;
+		maxEnergyOutput = energy;
         arcLimits = new SocketArc(45, 45, 45, 0);
         position = Vector3.zero;
         rotation = Quaternion.identity;

@@ -17,6 +17,6 @@ public class InstallableModuleAsset : ScriptableObject {
     [Header("Stats")]
     public int idleCpuUsage;
 
-    /// <summary>The amount of power required to be enabled / installed.</summary>
-    public int idlePowerUsage;
+    /// <summary>The amount of energy required to be enabled / installed.</summary>
+    public int idleEnergyDrain;
 }

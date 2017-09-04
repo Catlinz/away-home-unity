@@ -20,34 +20,34 @@ public class ComputerSystem {
     /// Delegate to listen for when CPU resources become available.
     /// </summary>
     /// <param name="freeCpu">The new level of free energy.</param>
-    public delegate void CpuResourcesGained(float freeCpu);
+    public delegate void IdleCpuGained(float idleCpu);
     /// <summary>Event generated when free energy is gained.</summary>
-    public event CpuResourcesGained onCpuResourcesGained;
+	public event IdleCpuGained onIdleCpuGained;
 
     /// <summary>The amount of CPU resources given by the system.</summary>
     public ModifiableFloat totalCpu;
     /// <summary>The current amount of CPU resources being used.</summary>
-    public int cpuUsage;
+    public int allocatedCpu;
 
     /// <summary>The health of the ComputerSystem.  Damaged computer = less resources.</summary>
     public float health;
 
     /// <summary>The amount of free CPU resources available.</summary>
-    public float UnallocatedCpu {
-        get { return totalCpu - (float)cpuUsage; }
+    public float IdleCpu {
+		get { return totalCpu - (float)allocatedCpu; }
     }
 
     /// <summary>Default constructor.</summary>
     public ComputerSystem() {
         totalCpu = 0;
-        cpuUsage = 0;
+		allocatedCpu = 0;
         health = 100;
     }
 
     /// <summary>Copy constructor.</summary>
     public ComputerSystem(ComputerSystem src) {
         totalCpu = src.totalCpu;
-        cpuUsage = src.cpuUsage;
+		allocatedCpu = src.allocatedCpu;
         health = src.health;
     }
 
@@ -58,8 +58,8 @@ public class ComputerSystem {
     /// <param name="cpu">The amount of CPU resources to allocate.</param>
     /// <returns>True if there were enough resources to allocate, false otherwise.</returns>
     public bool AllocateCpu(int cpu) {
-        if (cpuUsage + cpu <= totalCpu) {
-            cpuUsage += cpu;
+		if (allocatedCpu + cpu <= totalCpu) {
+			allocatedCpu += cpu;
             return true;
         }
         else { return false; }
@@ -71,9 +71,9 @@ public class ComputerSystem {
     /// </summary>
     /// <param name="cpu">The amount of CPU resources to free.</param>
     public void DeallocateCpu(int cpu) {
-        cpuUsage -= cpu;
-        if (cpuUsage < 0) { cpuUsage = 0; }
-        if (onCpuResourcesGained != null) { onCpuResourcesGained(UnallocatedCpu); }
+		allocatedCpu -= cpu;
+		if (allocatedCpu < 0) { allocatedCpu = 0; }
+        if (onIdleCpuGained != null) { onIdleCpuGained(IdleCpu); }
     }
 
     /// <summary>
@@ -86,9 +86,9 @@ public class ComputerSystem {
         totalCpu.added = added;
         totalCpu.modifier = modifier;
 
-        if (totalCpu < cpuUsage) {
+		if (totalCpu < allocatedCpu) {
             if (onAllocatedCpuLost != null) {
-                onAllocatedCpuLost(cpuUsage - totalCpu);
+				onAllocatedCpuLost(allocatedCpu - totalCpu);
             }
         }
     }
@@ -103,9 +103,9 @@ public class ComputerSystem {
         totalCpu.added += addedDelta;
         totalCpu.modifier += modifierDelta;
 
-        if (totalCpu < cpuUsage) {
+		if (totalCpu < allocatedCpu) {
             if (onAllocatedCpuLost != null) {
-                onAllocatedCpuLost(cpuUsage - totalCpu);
+				onAllocatedCpuLost(allocatedCpu - totalCpu);
             }
         }
     }

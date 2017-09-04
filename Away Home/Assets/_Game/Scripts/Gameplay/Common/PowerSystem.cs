@@ -12,17 +12,17 @@ public class PowerSystem {
     /// Delegate to listen for when reserved energy is lost.
     /// </summary>
     /// <param name="energyLost">The amount of reserved energy that was lost.</param>
-    public delegate void CriticalPowerLost(float energyLost);
+    public delegate void ReservedEnergyLost(float energyLost);
     /// <summary>Event generated when reserved energy is lost.</summary>
-    public event CriticalPowerLost onCriticalPowerLost;
+    public event ReservedEnergyLost onReservedEnergyLost;
 
     /// <summary>
     /// Delegate to listen for when free energy is gained.
     /// </summary>
     /// <param name="freeEnergy">The new level of free energy.</param>
-    public delegate void UsablePowerGained(float freeEnergy);
+    public delegate void UsableEnergyGained(float freeEnergy);
     /// <summary>Event generated when free energy is gained.</summary>
-    public event UsablePowerGained onUsablePowerGained;
+    public event UsableEnergyGained onUsableEnergyGained;
 
     /// <summary>The max energy the system can store.</summary>
     public ModifiableFloat energyCapacity;
@@ -30,7 +30,7 @@ public class PowerSystem {
     public ModifiableFloat energyRecharge;
 
     /// <summary>The amount of energy required for enabled Modules.</summary>
-    public int criticalEnergy;
+    public int reservedEnergy;
     /// <summary>The amount of energy the system current has.</summary>
     public float currentEnergy;
 
@@ -39,14 +39,14 @@ public class PowerSystem {
 
     /// <summary>The free energy that is currently available for use.</summary>
     public float FreeEnergy {
-        get { return currentEnergy - criticalEnergy; }
+        get { return currentEnergy - reservedEnergy; }
     }
 
     /// <summary>Default constructor.</summary>
     public PowerSystem() {
         energyCapacity = 0;
         energyRecharge = 0;
-        criticalEnergy = 0;
+        reservedEnergy = 0;
         currentEnergy = 0;
         health = 100;
     }
@@ -55,7 +55,7 @@ public class PowerSystem {
     public PowerSystem(PowerSystem src) {
         energyCapacity = src.energyCapacity;
         energyRecharge = src.energyRecharge;
-        criticalEnergy = src.criticalEnergy;
+        reservedEnergy = src.reservedEnergy;
         currentEnergy = src.currentEnergy;
         health = src.health;
     }
@@ -67,7 +67,7 @@ public class PowerSystem {
     /// <param name="energy">The amount of energy to add.</param>
     public void Add(float energy) {
         currentEnergy += energy;
-        if (onUsablePowerGained != null) { onUsablePowerGained(FreeEnergy);  }
+        if (onUsableEnergyGained != null) { onUsableEnergyGained(FreeEnergy);  }
     }
 
     /// <summary>
@@ -86,8 +86,8 @@ public class PowerSystem {
             if (currentEnergy < 0.0f) { currentEnergy = 0.0f; }
 
             // If we consumed into the reserves, call delegates.
-            if (currentEnergy < criticalEnergy) {
-                if (onCriticalPowerLost != null) { onCriticalPowerLost((float)criticalEnergy - currentEnergy); }
+            if (currentEnergy < reservedEnergy) {
+                if (onReservedEnergyLost != null) { onReservedEnergyLost((float)reservedEnergy - currentEnergy); }
             }
             return true;
         }
@@ -100,10 +100,24 @@ public class PowerSystem {
     /// </summary>
     /// <param name="energy">The energy to free up.</param>
     public void Free(int energy) {
-        criticalEnergy -= energy;
-        if (criticalEnergy < 0) { criticalEnergy = 0; }
-        if (onUsablePowerGained != null) { onUsablePowerGained(FreeEnergy); }
+        reservedEnergy -= energy;
+        if (reservedEnergy < 0) { reservedEnergy = 0; }
+        if (onUsableEnergyGained != null) { onUsableEnergyGained(FreeEnergy); }
     }
+
+	/// <summary>
+	/// Put an amount of energy into the reserved energy for the Modules.
+	/// <para>If there isn't enough energy to reserve, then the method returns false.</para>
+	/// </summary>
+	/// <param name="energy">The amount of energy to reserve.</param>
+	/// <returns>True if the amount of energy could be reserved, false if there wasn't enough energy to reserve.</returns>
+	public bool Reserve(int energy) {
+		if ((reservedEnergy + energy) <= currentEnergy) {
+			reservedEnergy += energy;
+			return true;
+		}
+		else { return false; }
+	}
 
     /// <summary>
     /// Set the modifiers to the energyCapacity for the PowerSystem.
@@ -153,19 +167,5 @@ public class PowerSystem {
     public void UpdateEnergyRecharge(float addDelta = 0.0f, float modifierDelta = 0.0f) {
         energyRecharge.added += addDelta;
         energyCapacity.modifier += modifierDelta;
-    }
-
-    /// <summary>
-    /// Put an amount of energy into the reserved energy for the Modules.
-    /// <para>If there isn't enough energy to reserve, then the method returns false.</para>
-    /// </summary>
-    /// <param name="energy">The amount of energy to reserve.</param>
-    /// <returns>True if the amount of energy could be reserved, false if there wasn't enough energy to reserve.</returns>
-    public bool Use(int energy) {
-        if ((criticalEnergy + energy) <= currentEnergy) {
-            criticalEnergy += energy;
-            return true;
-        }
-        else { return false; }
     }
 }

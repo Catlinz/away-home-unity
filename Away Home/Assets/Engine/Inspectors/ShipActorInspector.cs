@@ -26,12 +26,23 @@ public class ShipActorInspector : Editor {
     public override void OnInspectorGUI() {
         serializedObject.Update();
 
+		// Draw the Script property like the default InspectorGUI does.
+		EditorGUI.BeginDisabledGroup(true);
+		EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"), true, new GUILayoutOption[0]);
+		EditorGUI.EndDisabledGroup();
+		EditorGUILayout.Space();
+
         // Draw the basic fields.
         EditorGUILayout.PropertyField(serializedObject.FindProperty("computer"), true);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("power"), true);
-        EditorGUILayout.Space();
+		EditorGUILayout.PropertyField(serializedObject.FindProperty("armor"), true);
+
+		EditorGUILayout.Separator();
         // Draw the sockets.
         InspectorHandleSockets();
+
+		EditorGUILayout.Space();
+		EditorGUILayout.PropertyField(serializedObject.FindProperty("test"));
 
         serializedObject.ApplyModifiedProperties();
     }
@@ -74,7 +85,7 @@ public class ShipActorInspector : Editor {
     /// </summary>
     private void InspectorHandleSockets() {
         // Draw the sockets.
-        SerializedProperty sockets = serializedObject.FindProperty("sockets");
+		SerializedProperty sockets = serializedObject.FindProperty("modules").FindPropertyRelative("sockets");
         sockets.isExpanded = EditorGUILayout.Foldout(sockets.isExpanded, sockets.displayName, true);
         if (sockets.isExpanded) {
             EditorGUI.indentLevel += 1;
@@ -112,10 +123,10 @@ public class ShipActorInspector : Editor {
         cpu.FindPropertyRelative("added").floatValue = ShipSocket.empty.maxCpuBandwidth.added;
         cpu.FindPropertyRelative("initial").floatValue = ShipSocket.empty.maxCpuBandwidth.initial;
 
-        SerializedProperty power = socket.FindPropertyRelative("maxPowerOutput");
-        power.FindPropertyRelative("modifier").floatValue = ShipSocket.empty.maxCpuBandwidth.modifier;
-        power.FindPropertyRelative("added").floatValue = ShipSocket.empty.maxCpuBandwidth.added;
-        power.FindPropertyRelative("initial").floatValue = ShipSocket.empty.maxCpuBandwidth.initial;
+		SerializedProperty power = socket.FindPropertyRelative("maxEnergyOutput");
+        power.FindPropertyRelative("modifier").floatValue = ShipSocket.empty.maxEnergyOutput.modifier;
+		power.FindPropertyRelative("added").floatValue = ShipSocket.empty.maxEnergyOutput.added;
+		power.FindPropertyRelative("initial").floatValue = ShipSocket.empty.maxEnergyOutput.initial;
 
         SerializedProperty arc = socket.FindPropertyRelative("arcLimits");
         arc.FindPropertyRelative("up").floatValue = ShipSocket.empty.arcLimits.up;
@@ -137,8 +148,8 @@ public class ShipActorInspector : Editor {
         shipRot = (Tools.pivotRotation == PivotRotation.Local) ? shipTx.rotation : Quaternion.identity;
 
 
-        for (int i = 0; i < ship.sockets.Length; ++i) {
-            SceneGUIHandleSocket(ref ship.sockets[i]);
+		for (int i = 0; i < ship.modules.sockets.Length; ++i) {
+			SceneGUIHandleSocket(ref ship.modules.sockets[i]);
         }
     }
 
