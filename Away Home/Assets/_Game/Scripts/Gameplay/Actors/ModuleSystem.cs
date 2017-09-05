@@ -2,19 +2,61 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The ModuleSystem is responsible for storing the list of ShipSockets that the ship has, 
+/// as well as managing all the installed modules for the ship.
+/// </summary>
 [System.Serializable]
 public class ModuleSystem {
 
+    /// <summary>The reason why a module was removed.</summary>
+    public enum RemovedReason { Uninstalled, Destroyed };
+
+    /// <summary>The delegate for when a new Module is installed on the ship.</summary>
+    /// <param name="module">The module that was installed.</param>
+    public delegate void ModuleInstalled(ShipModuleClass module);
+    /// <summary>The event that is fired when a new module was installed.</summary>
+    public event ModuleInstalled onModuleInstalled;
+
+    /// <summary>The delegate for when a Module is removed from the ship.</summary>
+    /// <param name="module">The module that was removed.</param>
+    /// <param name="reason">The reason why the module was removed.</param>
+    public delegate void ModuleRemoved(ShipModuleClass module, RemovedReason reason);
+    /// <summary>The event that is fired when a Module is removed.</summary>
+    public event ModuleRemoved onModuleRemoved;
+
+    /// <summary>The delegate for when a module is enabled.</summary>
+    /// <param name="module">The module that was enabled.</param>
+    public delegate void ModuleEnabled(ShipModuleClass module);
+    /// <summary>The event that is fired when a Module is enabled.</summary>
+    public event ModuleEnabled onModuleEnabled;
+
+    /// <summary>The delegate for when a module is disabled.</summary>
+    /// <param name="module">The module that was disabled.</param>
+    public delegate void ModuleDisabled(ShipModuleClass module);
+    /// <summary>The even that is fired when a module is disabled.</summary>
+    public event ModuleDisabled onModuleDisabled;
+
+    /// <summary>The list of ShipSockets that the ship has.</summary>
 	public ShipSocket[] sockets;
 
+    /// <summary>The list of current installed passive modules.</summary>
 	private ShipModuleClass[] passiveModules;
+
 
 	public ModuleSystem() {
 
 	}
 
+    /// <summary>
+    /// Handles adding a new Passive module that has just been initialized.
+    /// </summary>
+    /// <param name="module">The new passive module to store.</param>
 	private void AddPassiveModule(ShipModuleClass module) {
-		//TODO: Implemnet this.
+        ShipModuleClass[] newArr = new ShipModuleClass[passiveModules.Length + 1];
+        passiveModules.CopyTo(newArr, 0);
+        newArr[passiveModules.Length] = module;
+        passiveModules = newArr;
 	}
 
 	/// <summary>
@@ -65,19 +107,84 @@ public class ModuleSystem {
 		return ShipSocket.empty;
 	}
 
+    /// <summary>
+    /// Called to initialize the module after it has been created and physically added to 
+    /// the ship GameObject.  This method makes sure the Module is initialized from the asset and 
+    /// socket values, and added to the appropriate group or array if it is an Active or Passive module.
+    /// <para>Triggers the onModuleInstalled event.</para>
+    /// </summary>
+    /// <param name="module">The ship module to initialise.</param>
+    /// <param name="moduleAsset">The asset to initialise the module from.</param>
+    /// <param name="socket">The socket that the module is installed into.</param>
 	public void InitFromAssetInSocket(ShipModuleClass module, InstallableModuleAsset moduleAsset, ShipSocket socket) {
 		module.InitFromAssetInSocket(moduleAsset, socket);
 
+        // If the module is a passive module, then handle it.
 		if (module.GetModuleType() == ShipModuleClass.ModuleType.Passive) {
 			AddPassiveModule(module);
 		}
+        else {
+            // The module is an active module, so add it to the appriopriate activation group.
+            //TODO: Add to the appropriate activation group.
+        }
 
-		//TODO: Add to the appropriate group if it is an active module.
+        // Notify any ModuleInstalled delegates.
+        if (onModuleInstalled != null) { onModuleInstalled(module); }
 	}
 
+    /// <summary>
+    /// Remove a module from the ship.
+    /// <para>First disables the module (if enabled), then Triggers the onModuleRemoved event.</para>
+    /// </summary>
+    /// <param name="module">The module to remove from the ship.</param>
+    /// <param name="ship">The ship to remove the module from.</param>
+    /// <param name="reason">The reason the module is being removed.  Defaults to Uninstalled.</param>
+    public void RemoveModule(ShipModuleClass module, ShipActorComponent ship, RemovedReason reason = RemovedReason.Uninstalled) {
+        TryDisable(module, ship);
+
+        //TODO: Implement the rest of this.
+        // Notify any of the ModuleRemoved delegates.
+        if (onModuleRemoved != null) { onModuleRemoved(module, reason); }
+    }
+
+    /// <summary>
+    /// Try and disable the provided module.
+    /// <para>Triggers the onModuleDisabled event.</para>
+    /// </summary>
+    /// <param name="module">The module to disable.</param>
+    /// <param name="ship">The ship that the module is installed on.</param>
+    /// <returns>
+    /// A PARTIAL OperationResult with a message if the module is already disabled,
+    /// otherwise it returns OperationResult.OK
+    /// </returns>
+    public OperationResult TryDisable(ShipModuleClass module, ShipActorComponent ship) {
+        if (!module.IsEnabled) {
+            return new OperationResult(OperationResult.Status.PARTIAL, "Module is already disabled.");
+        }
+
+        module.DisableOnShip(ship);
+
+        if (onModuleDisabled != null) { onModuleDisabled(module); }
+        return OperationResult.OK;
+    }
+
+    /// <summary>
+    /// Try to enable the ship module on the ship.
+    /// <para>Triggers the onModuleEnabled event.</para>
+    /// </summary>
+    /// <param name="module">The module to try and enable.</param>
+    /// <param name="ship">The ship that the ModuleSystem belongs to.</param>
+    /// <returns>
+    /// OperationResult.OK if the module is enabled, but if it cannot be enabled, it 
+    /// returns OperationResult.Status.PARTIAL and a message saying why it can't be enabled.
+    /// </returns>
 	public OperationResult TryEnable(ShipModuleClass module, ShipActorComponent ship) {
 		if (CanEnable(module, ship)) {
 			module.EnableOnShip(ship);
+            
+            // Notify any ModuleEnabled delegates.
+            if (onModuleEnabled != null) { onModuleEnabled(module); }
+
 			return OperationResult.OK;
 		}
 		else {
