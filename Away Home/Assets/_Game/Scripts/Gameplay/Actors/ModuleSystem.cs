@@ -53,9 +53,12 @@ public class ModuleSystem {
     /// </summary>
     /// <param name="module">The new passive module to store.</param>
 	private void AddPassiveModule(ShipModuleClass module) {
-        ShipModuleClass[] newArr = new ShipModuleClass[passiveModules.Length + 1];
-        passiveModules.CopyTo(newArr, 0);
-        newArr[passiveModules.Length] = module;
+        int newLen = (passiveModules != null) ? passiveModules.Length + 1 : 1;
+        ShipModuleClass[] newArr = new ShipModuleClass[newLen];
+        if (passiveModules != null) {
+            passiveModules.CopyTo(newArr, 0);
+        }
+        newArr[newLen - 1] = module;
         passiveModules = newArr;
 	}
 
@@ -142,7 +145,7 @@ public class ModuleSystem {
     public void RemoveModule(ShipModuleClass module, ShipActorComponent ship, RemovedReason reason = RemovedReason.Uninstalled) {
         TryDisable(module, ship);
 
-        //TODO: Implement the rest of this.
+        GameObject.Destroy(module.gameObject);
         // Notify any of the ModuleRemoved delegates.
         if (onModuleRemoved != null) { onModuleRemoved(module, reason); }
     }
