@@ -85,11 +85,14 @@ public class ModuleSystem {
 	/// module can be installed.
 	/// </returns>
 	public OperationResult CanInstallInSocket(InstallableModuleAsset moduleAsset, ShipSocket socket) {
+        if (socket.Module != null) {
+            return new OperationResult(OperationResult.Status.FAIL, "Cannot install Module, socket is already occupied.");
+        }
 		if (socket.maxEnergyOutput < moduleAsset.idleEnergyDrain) {
-			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset in socket, not enough power output.");
+			return new OperationResult(OperationResult.Status.FAIL, "Cannot install Module in socket, not enough power output.");
 		} 
 		else if (socket.maxCpuBandwidth < moduleAsset.idleCpuUsage) { 
-			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset in socket, not enough CPU bandwidth.");
+			return new OperationResult(OperationResult.Status.FAIL, "Cannot install Module in socket, not enough CPU bandwidth.");
 		}
 		else {
 			return OperationResult.OK;
@@ -100,15 +103,29 @@ public class ModuleSystem {
 	/// Get the details about a ship socket by name.
 	/// </summary>
 	/// <param name="socketName">The name of the socket to get.</param>
-	/// <returns>The ship socket, if found, otherwise returns the empty socket.</returns>
+	/// <returns>The ship socket, if found, otherwise returns null.</returns>
 	public ShipSocket GetSocket(string socketName) {
 		for (int i = 0; i < sockets.Length; ++i) {
 			if (sockets[i].socketName == socketName) {
 				return sockets[i];
 			}
 		}
-		return ShipSocket.empty;
+		return null;
 	}
+
+    /// <summary>
+    /// Get the ShipSocket with the provided Module installed.
+    /// </summary>
+    /// <param name="module">The module to find the socket for.</param>
+    /// <returns>The ShipSocket or null if none are found.</returns>
+    public ShipSocket GetSocket(ShipModuleClass module) {
+        for (int i = 0; i < sockets.Length; ++i) {
+            if (sockets[i].Module == module) {
+                return sockets[i];
+            }
+        }
+        return null;
+    }
 
     /// <summary>
     /// Called to initialize the module after it has been created and physically added to 
@@ -144,6 +161,10 @@ public class ModuleSystem {
     /// <param name="reason">The reason the module is being removed.  Defaults to Uninstalled.</param>
     public void RemoveModule(ShipModuleClass module, ShipActorComponent ship, RemovedReason reason = RemovedReason.Uninstalled) {
         TryDisable(module, ship);
+
+        // Remove the module from the socket.
+        ShipSocket socket = GetSocket(module);
+        if (socket != null) { socket.SetModule(null);  }
 
         GameObject.Destroy(module.gameObject);
         // Notify any of the ModuleRemoved delegates.

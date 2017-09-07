@@ -16,9 +16,6 @@ public class ShipModuleClass : MonoBehaviour {
 	/// <summary>The asset that was used to construct the Module from.</summary>
 	private InstallableModuleAsset moduleAsset;
 
-    /// <summary>The name of the ShipSocket that the module is installed into.</summary>
-    private string socketName;
-
 	/// <summary>The amount of power consumed by the Module when enabled.</summary>
 	public int IdleEnergyDrain {
 		get { return moduleAsset.idleEnergyDrain; }
@@ -32,11 +29,6 @@ public class ShipModuleClass : MonoBehaviour {
     /// <summary>Whether or not the Module is currently enabled.</summary>
     public bool IsEnabled {
         get { return isEnabled; }
-    }
-
-    /// <summary>The name of the ShipSocket that the Module is installed into.</summary>
-    public string SocketName {
-        get { return socketName; }
     }
 
 	/// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
@@ -70,6 +62,6 @@ public class ShipModuleClass : MonoBehaviour {
 	/// <param name="socket">The ShipSocket that the module is being installed on.</param>
 	public virtual void InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocket socket) {
 		moduleAsset = asset;
-        socketName = socket.socketName;
+        socket.SetModule(this);
 	}
 }

@@ -25,7 +25,7 @@ public struct SocketArc {
 /// Represents a socket into which a module can be placed on a ShipActorComponent.
 /// </summary>
 [System.Serializable]
-public struct ShipSocket {
+public class ShipSocket {
 
 	/// <summary>The name of the socket to identify it by.</summary>
 	public string socketName;
@@ -45,23 +45,39 @@ public struct ShipSocket {
     /// <summary>The rotation of the socket relative to the ship.</summary>
 	public Quaternion rotation;
 
-    public ShipSocket(float cpu, float energy) {
+    /// <summary>The module that is currently installed in the socket (if any).</summary>
+    private ShipModuleClass module;
+
+    /// <summary>The module that is current installed in the socket (if any).</summary>
+    public ShipModuleClass Module { get { return module;  } }
+
+    /// <summary>Default constructor</summary>
+    public ShipSocket() {
         socketName = null;
-        maxCpuBandwidth = cpu;
-		maxEnergyOutput = energy;
+        maxCpuBandwidth = 0.0f;
+        maxEnergyOutput = 0.0f;
         arcLimits = new SocketArc(45, 45, 45, 0);
         position = Vector3.zero;
         rotation = Quaternion.identity;
+        module = null;
     }
 
     /// <summary>
-    /// Checks whether a socket is valid or not.
+    /// Create a new ShipSocket with the specific cpu and energy specifications.
     /// </summary>
-    /// <returns>True if the socket is valid (has a name).</returns>
-    public bool IsValid() {
-        return socketName == null;
+    /// <param name="cpu">The amount of CPU bandwidth the socket can supply.</param>
+    /// <param name="energy">The amount of energy the socket can supply.</param>
+    public ShipSocket(float cpu, float energy) 
+        : this() {
+        maxCpuBandwidth = cpu;
+		maxEnergyOutput = energy;
     }
 
-    /// <summary>The values for a default empty socket.</summary>
-    public static readonly ShipSocket empty = new ShipSocket(0, 0);
+    /// <summary>
+    /// Set the module that is currently installed in the socket.
+    /// </summary>
+    /// <param name="module">The module to install into the socket.</param>
+    public void SetModule(ShipModuleClass module) {
+        this.module = module;
+    }
 }

@@ -115,27 +115,28 @@ public class ShipActorInspector : Editor {
         else {
             sockets.InsertArrayElementAtIndex(index);
         }
+        ShipSocket def = new ShipSocket();
         SerializedProperty socket = sockets.GetArrayElementAtIndex(index);
-        socket.FindPropertyRelative("socketName").stringValue = ShipSocket.empty.socketName;
+        socket.FindPropertyRelative("socketName").stringValue = def.socketName;
 
         SerializedProperty cpu = socket.FindPropertyRelative("maxCpuBandwidth");
-        cpu.FindPropertyRelative("modifier").floatValue = ShipSocket.empty.maxCpuBandwidth.modifier;
-        cpu.FindPropertyRelative("added").floatValue = ShipSocket.empty.maxCpuBandwidth.added;
-        cpu.FindPropertyRelative("initial").floatValue = ShipSocket.empty.maxCpuBandwidth.initial;
+        cpu.FindPropertyRelative("modifier").floatValue = def.maxCpuBandwidth.modifier;
+        cpu.FindPropertyRelative("added").floatValue = def.maxCpuBandwidth.added;
+        cpu.FindPropertyRelative("initial").floatValue = def.maxCpuBandwidth.initial;
 
 		SerializedProperty power = socket.FindPropertyRelative("maxEnergyOutput");
-        power.FindPropertyRelative("modifier").floatValue = ShipSocket.empty.maxEnergyOutput.modifier;
-		power.FindPropertyRelative("added").floatValue = ShipSocket.empty.maxEnergyOutput.added;
-		power.FindPropertyRelative("initial").floatValue = ShipSocket.empty.maxEnergyOutput.initial;
+        power.FindPropertyRelative("modifier").floatValue = def.maxEnergyOutput.modifier;
+		power.FindPropertyRelative("added").floatValue = def.maxEnergyOutput.added;
+		power.FindPropertyRelative("initial").floatValue = def.maxEnergyOutput.initial;
 
         SerializedProperty arc = socket.FindPropertyRelative("arcLimits");
-        arc.FindPropertyRelative("up").floatValue = ShipSocket.empty.arcLimits.up;
-        arc.FindPropertyRelative("down").floatValue = ShipSocket.empty.arcLimits.down;
-        arc.FindPropertyRelative("left").floatValue = ShipSocket.empty.arcLimits.left;
-        arc.FindPropertyRelative("right").floatValue = ShipSocket.empty.arcLimits.right;
+        arc.FindPropertyRelative("up").floatValue = def.arcLimits.up;
+        arc.FindPropertyRelative("down").floatValue = def.arcLimits.down;
+        arc.FindPropertyRelative("left").floatValue = def.arcLimits.left;
+        arc.FindPropertyRelative("right").floatValue = def.arcLimits.right;
 
-        socket.FindPropertyRelative("position").vector3Value = ShipSocket.empty.position;
-        socket.FindPropertyRelative("rotation").quaternionValue = ShipSocket.empty.rotation;
+        socket.FindPropertyRelative("position").vector3Value = def.position;
+        socket.FindPropertyRelative("rotation").quaternionValue = def.rotation;
     }
 
     /// <summary>
