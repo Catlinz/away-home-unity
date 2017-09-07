@@ -39,6 +39,7 @@ public class ConsoleService {
     public ConsoleService() {
         RegisterCommand("echo", Echo, "Echos arguments back as an array (for testing argument parser)");
         RegisterCommand("help", Help, "List the commands and their help strings.");
+        RegisterCommand("findbyname", FindByName, "Find a GameObject by name");
         RegisterCommand("reload", Reload, "Reload game.");
     }
 
@@ -136,6 +137,17 @@ public class ConsoleService {
 
     void Reload(string[] args) {
         Application.LoadLevel(Application.loadedLevel);
+    }
+
+    void FindByName(string[] args) {
+        string name = args[0];
+        GameObject obj = GameObject.Find(name);
+        if (obj) {
+            AppendLogLine(obj.name);
+        }
+        else {
+            AppendLogLine("Object '" + name + "' not found.");
+        }
     }
     #endregion
 
