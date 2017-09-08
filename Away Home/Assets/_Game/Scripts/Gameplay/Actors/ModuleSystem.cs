@@ -159,29 +159,39 @@ public class ModuleSystem {
     /// <param name="module">The module to remove from the ship.</param>
     /// <param name="ship">The ship to remove the module from.</param>
     /// <param name="reason">The reason the module is being removed.  Defaults to Uninstalled.</param>
-    public void RemoveModule(ShipModuleClass module, ShipActorComponent ship, RemovedReason reason = RemovedReason.Uninstalled) {
-        TryDisable(module, ship);
+    public InstallableModuleAsset RemoveModuleFrom(ShipSocket socket, ShipActorComponent ship, RemovedReason reason = RemovedReason.Uninstalled) {
+        TryDisable(socket, ship);
+
+        ShipModuleClass module = socket.Module;
 
         // Remove the module from the socket.
-        ShipSocket socket = GetSocket(module);
-        if (socket != null) { socket.SetModule(null);  }
+        socket.SetModule(null);
 
-        GameObject.Destroy(module.gameObject);
-        // Notify any of the ModuleRemoved delegates.
-        if (onModuleRemoved != null) { onModuleRemoved(module, reason); }
+        if (module) {
+            InstallableModuleAsset asset = module.Asset;
+
+            GameObject.Destroy(module.gameObject);
+            // Notify any of the ModuleRemoved delegates.
+            if (onModuleRemoved != null) { onModuleRemoved(module, reason); }
+            return asset;
+        }
+        return null;
     }
 
     /// <summary>
     /// Try and disable the provided module.
     /// <para>Triggers the onModuleDisabled event.</para>
     /// </summary>
-    /// <param name="module">The module to disable.</param>
+    /// <param name="socket">The socket to disable the module in.</param>
     /// <param name="ship">The ship that the module is installed on.</param>
     /// <returns>
     /// A PARTIAL OperationResult with a message if the module is already disabled,
-    /// otherwise it returns OperationResult.OK
+    /// a FAIL if there is no module in the socket, otherwise it returns OperationResult.OK
     /// </returns>
-    public OperationResult TryDisable(ShipModuleClass module, ShipActorComponent ship) {
+    public OperationResult TryDisable(ShipSocket socket, ShipActorComponent ship) {
+        if (socket.Module == null) { return new OperationResult(OperationResult.Status.FAIL, "No module to disable."); }
+
+        ShipModuleClass module = socket.Module;
         if (!module.IsEnabled) {
             return new OperationResult(OperationResult.Status.PARTIAL, "Module is already disabled.");
         }
@@ -196,13 +206,19 @@ public class ModuleSystem {
     /// Try to enable the ship module on the ship.
     /// <para>Triggers the onModuleEnabled event.</para>
     /// </summary>
-    /// <param name="module">The module to try and enable.</param>
+    /// <param name="socket">The socket to enable the module on.</param>
     /// <param name="ship">The ship that the ModuleSystem belongs to.</param>
     /// <returns>
     /// OperationResult.OK if the module is enabled, but if it cannot be enabled, it 
     /// returns OperationResult.Status.PARTIAL and a message saying why it can't be enabled.
     /// </returns>
-	public OperationResult TryEnable(ShipModuleClass module, ShipActorComponent ship) {
+	public OperationResult TryEnable(ShipSocket socket, ShipActorComponent ship) {
+        if (socket.Module == null) {
+            return new OperationResult(OperationResult.Status.FAIL, "No module to disable.");
+        }
+
+        ShipModuleClass module = socket.Module;
+
 		if (CanEnable(module, ship)) {
 			module.EnableOnShip(ship);
             

@@ -16,6 +16,11 @@ public class ShipModuleClass : MonoBehaviour {
 	/// <summary>The asset that was used to construct the Module from.</summary>
 	private InstallableModuleAsset moduleAsset;
 
+    /// <summary>Get the asset that was used to construct the Module.</summary>
+    public InstallableModuleAsset Asset {
+        get { return moduleAsset; }
+    }
+
 	/// <summary>The amount of power consumed by the Module when enabled.</summary>
 	public int IdleEnergyDrain {
 		get { return moduleAsset.idleEnergyDrain; }

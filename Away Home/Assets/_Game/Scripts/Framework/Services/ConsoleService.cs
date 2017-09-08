@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public delegate void ConsoleCommandHandler(string[] args);
 
@@ -39,7 +42,9 @@ public class ConsoleService {
     public ConsoleService() {
         RegisterCommand("echo", Echo, "Echos arguments back as an array (for testing argument parser)");
         RegisterCommand("help", Help, "List the commands and their help strings.");
-        RegisterCommand("findbyname", FindByName, "Find a GameObject by name");
+#if UNITY_EDITOR
+        RegisterCommand("install_module", InstallModule, "Install a module on a ship.");
+#endif
         RegisterCommand("reload", Reload, "Reload game.");
     }
 
@@ -134,6 +139,34 @@ public class ConsoleService {
             AppendLogLine(string.Format("{0}: {1}", cmd.Command, cmd.Help));
         }
     }
+
+#if UNITY_EDITOR
+    void InstallModule(string[] args) {
+        string shipName = args[0];
+        string assetPath = args[1];
+        string socketName = args[2];
+
+        AppendLogLine(shipName);
+
+        GameObject obj = GameObject.Find(shipName);
+        if (obj) {
+            InstallableModuleAsset asset = (InstallableModuleAsset)AssetDatabase.LoadAssetAtPath(assetPath, typeof(InstallableModuleAsset));
+            if (asset != null) {
+                OperationResult result = obj.GetComponent<ShipActorComponent>().InstallModule(asset, socketName);
+                if (result.status != OperationResult.Status.OK) {
+                    AppendLogLine(result.message);
+                }
+            }
+            else {
+                AppendLogLine("Failed to find Asset.");
+            }
+            
+        }
+        else {
+            AppendLogLine("Failed to find GameObject.");
+        }
+    }
+#endif
 
     void Reload(string[] args) {
         Application.LoadLevel(Application.loadedLevel);

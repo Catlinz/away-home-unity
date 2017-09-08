@@ -62,13 +62,39 @@ public class ShipActorComponent : MonoBehaviour {
 		modules.InitFromAssetInSocket(mod, asset, socket);
 
 		// Try and enable the component, if we can.
-		return modules.TryEnable(mod, this);
+		return modules.TryEnable(socket, this);
 	}
+
+    /// <summary>
+    /// Remove a module from the specified socket and returns the module's asset.
+    /// </summary>
+    /// <param name="socket">The socket to remove the module from.</param>
+    /// <param name="reason">The reason the module is being removed.</param>
+    /// <returns>The module asset that the module was created from, or null if the socket was empty.</returns>
+    public InstallableModuleAsset RemoveModuleFrom(ShipSocket socket, ModuleSystem.RemovedReason reason = ModuleSystem.RemovedReason.Uninstalled) {
+        // Make sure there's actually something in the socket to uninstall.
+        if (socket.Module == null) {
+            return null;
+        }
+
+        // Otherwise, try and remove the module.
+        return modules.RemoveModuleFrom(socket, this, reason);
+    }
+
+    /// <summary>
+    /// Uninstall a module from the ship and return the module's asset.
+    /// </summary>
+    /// <param name="socketName">The name of the socket to remove the module from.</param>
+    /// <returns>The asset for the module, or null if the socket was empty.</returns>
+    public InstallableModuleAsset UninstallModuleFrom(string socketName) {
+        ShipSocket socket = modules.GetSocket(socketName);
+        return RemoveModuleFrom(socket, ModuleSystem.RemovedReason.Uninstalled);
+    }
 
 	// Use this for initialization
 	void Start () {
 		movement = GetComponent<ShipMovementComponent>();
-        InstallModule(test, "TEST");
+        //InstallModule(test, "TEST");
 	}
 	
 	// Update is called once per frame
