@@ -57,7 +57,9 @@ public class ShipActorComponent : MonoBehaviour {
 			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset, invalid Prefab.");
 		}
 
-        GameObject go = GameObject.Instantiate(asset.prefab, socket.position, socket.rotation, gameObject.transform);
+        GameObject go = GameObject.Instantiate(asset.prefab, gameObject.transform);
+		go.transform.localPosition = socket.position;
+		go.transform.localRotation = socket.rotation;
 		ShipModuleClass mod = go.GetComponent<ShipModuleClass>();
 		modules.InitFromAssetInSocket(mod, asset, socket);
 
