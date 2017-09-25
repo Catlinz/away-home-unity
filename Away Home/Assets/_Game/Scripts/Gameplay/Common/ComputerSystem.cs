@@ -125,6 +125,18 @@ public class ComputerSystem {
     }
 
     /// <summary>
+    /// Set the percentage of overclocking for the computer system.  Overclocking 
+    /// increases the available CPU resources, but also damages the computer system.
+    /// </summary>
+    /// <param name="overclockPercent">The percentage of overclocking to do [0-1].</param>
+    public void SetOverclock(float overclockPercent) {
+        overclock = overclockPercent;
+
+        // Check for and take care of any lost resources.
+        CheckTotalCpu();
+    }
+
+    /// <summary>
     /// Set the modifiers to the total cpu resources for the ComputerSystem.
     /// <para>Generates a AllocatedCpuLost event with the amount of allocated CPU resources lost.</para>
     /// </summary>

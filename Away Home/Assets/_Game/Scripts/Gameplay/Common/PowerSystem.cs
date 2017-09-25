@@ -211,6 +211,18 @@ public class PowerSystem {
     }
 
     /// <summary>
+    /// Set the percentage of overclocking for the power system.  Overclocking 
+    /// increases the power capacity and recharge rate, but also damages the power system.
+    /// </summary>
+    /// <param name="overclockPercent">The percentage of overclocking to do [0-1].</param>
+    public void SetOverclock(float overclockPercent) {
+        overclock = overclockPercent;
+
+        // Check for and take care of any energy loss due to loss of capacity.
+        CheckCapacity();
+    }
+
+    /// <summary>
     /// Ticks the power system to recharge the power.  It will 
     /// accumulate power until it is >= to the rechargeRate/sec and 
     /// then add it and reset to zero.
