@@ -24,31 +24,62 @@ public class ComputerSystem {
     /// <summary>Event generated when free energy is gained.</summary>
 	public event IdleCpuGained onIdleCpuGained;
 
+    /// <summary>
+    /// Delegate to listen for when the computer system receives damage.
+    /// </summary>
+    /// <param name="percentDamage">The percentage of damage the system has currently [0-1].</param>
+    public delegate void SystemDamaged(float percentDamage);
+    /// <summary>Event generated when the system takes damage.</summary>
+    public event SystemDamaged onSystemDamaged;
+
     /// <summary>The amount of CPU resources given by the system.</summary>
     public ModifiableFloat totalCpu;
     /// <summary>The current amount of CPU resources being used.</summary>
     public int allocatedCpu;
 
-    /// <summary>The health of the ComputerSystem.  Damaged computer = less resources.</summary>
-    public float health;
+    /// <summary>The damage to the computer system.  More damage = less resources.</summary>
+    public float damage;
+
+    /// <summary>The amount that the system is currently overclocked by.</summary>
+    public float overclock;
 
     /// <summary>The amount of free CPU resources available.</summary>
     public float IdleCpu {
 		get { return totalCpu - (float)allocatedCpu; }
     }
 
+    /// <summary>Whether the computer system is currently overclocked or not.</summary>
+    public bool IsOverclocked {
+        get { return overclock >= 1.0f; }
+    }
+
+    ///<summary>The total CPU available with overclock and damage modifiers applied.</summary>
+    public float TotalCpu {
+        get {
+            if (damage > 0.0f) {
+                return totalCpu * overclock * (1.0f - (damage * 0.5f));
+            }
+            else { return totalCpu * overclock; }
+        }
+    }
+
+    /// <summary>Keeps track of the ticks and when damage should be applied.</summary>
+    private float timeAccum;
+
     /// <summary>Default constructor.</summary>
     public ComputerSystem() {
         totalCpu = 0;
 		allocatedCpu = 0;
-        health = 100;
+        damage = 0;
+        overclock = 1.0f;
     }
 
     /// <summary>Copy constructor.</summary>
     public ComputerSystem(ComputerSystem src) {
         totalCpu = src.totalCpu;
 		allocatedCpu = src.allocatedCpu;
-        health = src.health;
+        damage = src.damage;
+        overclock = src.overclock;
     }
 
     /// <summary>
@@ -58,7 +89,7 @@ public class ComputerSystem {
     /// <param name="cpu">The amount of CPU resources to allocate.</param>
     /// <returns>True if there were enough resources to allocate, false otherwise.</returns>
     public bool AllocateCpu(int cpu) {
-		if (allocatedCpu + cpu <= totalCpu) {
+        if (allocatedCpu + cpu <= TotalCpu) {
 			allocatedCpu += cpu;
             return true;
         }
@@ -71,9 +102,26 @@ public class ComputerSystem {
     /// </summary>
     /// <param name="cpu">The amount of CPU resources to free.</param>
     public void DeallocateCpu(int cpu) {
-		allocatedCpu -= cpu;
-		if (allocatedCpu < 0) { allocatedCpu = 0; }
+        allocatedCpu = Mathf.Max(allocatedCpu - cpu, 0);
         if (onIdleCpuGained != null) { onIdleCpuGained(IdleCpu); }
+    }
+
+    /// <summary>
+    /// Set the percent damage the system has taken.
+    /// </summary>
+    /// <param name="newDamage">The percent damage to set [0-1].</param>
+    public void SetDamage(float newDamage) {
+        float oldDamage = damage;
+        damage = newDamage;
+
+        if (newDamage > oldDamage) {
+            // Check to see if we lost any allocated resources to do total CPU change.
+            CheckTotalCpu();
+
+            if (onSystemDamaged != null) {
+                onSystemDamaged(damage);
+            }
+        }
     }
 
     /// <summary>
@@ -86,9 +134,44 @@ public class ComputerSystem {
         totalCpu.added = added;
         totalCpu.modifier = modifier;
 
-		if (totalCpu < allocatedCpu) {
-            if (onAllocatedCpuLost != null) {
-				onAllocatedCpuLost(allocatedCpu - totalCpu);
+        // Check to see if we lost any allocated resources to do total CPU change.
+        CheckTotalCpu();
+    }
+
+    /// <summary>
+    /// Ticks the computer system.  Basically just to apply damage based on 
+    /// overclocking.
+    /// </summary>
+    /// <param name="deltaTime">The amount of time passed, in seconds.</param>
+    public void Tick(float deltaTime) {
+        // Increment the time accumulator.
+        timeAccum += deltaTime;
+
+        // If >= 1 second, then do processing.
+        if (timeAccum >= 1.0f) {
+            // If is overclocked, then apply damage based on overclock amount.
+            if (IsOverclocked) {
+                // Apply damage
+                UpdateDamage((overclock - 1.0f) * timeAccum);
+            }
+
+            timeAccum = 0.0f;
+        }
+    }
+
+    /// <summary>
+    /// Update the damage to the Computer system.  If the system took damage, some allocated resources
+    /// may be lost.
+    /// </summary>
+    /// <param name="damageDelta">The amount of damage to apply to the system.</param>
+    public void UpdateDamage(float damageDelta) {
+        damage = Mathf.Max(damage + damageDelta, 0);
+        if (damageDelta > 0.0f) {
+            // Check to see if we lost any allocated resources to do total CPU change.
+            CheckTotalCpu();
+            
+            if (onSystemDamaged != null) {
+                onSystemDamaged(damage);
             }
         }
     }
@@ -103,9 +186,19 @@ public class ComputerSystem {
         totalCpu.added += addedDelta;
         totalCpu.modifier += modifierDelta;
 
-		if (totalCpu < allocatedCpu) {
+        // Check to see if we lost any allocated resources to do total CPU change.
+        CheckTotalCpu();
+    }
+
+    /// <summary>
+    /// Check to see if we lost any allocated resources due to a change in the total CPU available.
+    /// If so, then we broadcast an event.
+    /// </summary>
+    private void CheckTotalCpu() {
+        float total = TotalCpu;
+        if (total < allocatedCpu) {
             if (onAllocatedCpuLost != null) {
-				onAllocatedCpuLost(allocatedCpu - totalCpu);
+                onAllocatedCpuLost(allocatedCpu - total);
             }
         }
     }

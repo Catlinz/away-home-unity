@@ -93,17 +93,67 @@ public class ShipActorComponent : MonoBehaviour {
         return RemoveModuleFrom(socket, ModuleSystem.RemovedReason.Uninstalled);
     }
 
-	// Use this for initialization
-	void Start () {
+    /// <summary>
+    /// Handle cleanup of things that should be cleaned up from Start().
+    /// </summary>
+    private void OnDisable() {
+        // Remove handlers from the computer system.
+        computer.onAllocatedCpuLost -= HandleCpuLost;
+        computer.onIdleCpuGained -= HandleCpuGained;
+        computer.onSystemDamaged -= HandleComputerDamaged;
+
+        // Remove handlers from the power system.
+        power.onReservedEnergyLost -= HandleEnergyLost;
+        power.onUsableEnergyGained -= HandleEnergyGained;
+        power.onSystemDamaged -= HandlePowerDamaged;
+    }
+
+    // Use this for initialization
+    void Start () {
 		movement = GetComponent<ShipMovementComponent>();
         //InstallModule(test, "TEST");
+
+        // Add the handlers for the computer system.
+        computer.onAllocatedCpuLost += HandleCpuLost;
+        computer.onIdleCpuGained += HandleCpuGained;
+        computer.onSystemDamaged += HandleComputerDamaged;
+
+        // Add the handlers for the power system.
+        power.onReservedEnergyLost += HandleEnergyLost;
+        power.onUsableEnergyGained += HandleEnergyGained;
+        power.onSystemDamaged += HandlePowerDamaged;
 	}
 	
 	// Update is called once per frame
 	void Update () {
+        // Update the computer system.
+        computer.Tick(Time.deltaTime);
 
+        // Update power system.
+        power.Tick(Time.deltaTime);
 	}
-		
 
+    private void HandleComputerDamaged(float damage) {
 
+    }
+
+    private void HandleCpuGained(float cpuAvailable) {
+
+    }
+
+    private void HandleCpuLost(float energyLost) {
+
+    }
+
+    private void HandleEnergyGained(float freeEnergy) {
+
+    }
+
+    private void HandleEnergyLost(float cpuLost) {
+
+    }
+
+    private void HandlePowerDamaged(float damage) {
+
+    }
 }

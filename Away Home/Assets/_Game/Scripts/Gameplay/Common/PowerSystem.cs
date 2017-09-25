@@ -24,6 +24,14 @@ public class PowerSystem {
     /// <summary>Event generated when free energy is gained.</summary>
     public event UsableEnergyGained onUsableEnergyGained;
 
+    /// <summary>
+    /// Delegate to listen for when the power system receives damage.
+    /// </summary>
+    /// <param name="percentDamage">The percentage of damage the system has currently [0-1].</param>
+    public delegate void SystemDamaged(float percentDamage);
+    /// <summary>Event generated when the system takes damage.</summary>
+    public event SystemDamaged onSystemDamaged;
+
     /// <summary>The max energy the system can store.</summary>
     public ModifiableFloat energyCapacity;
     /// <summary>The rate at which energy is gained per second.</summary>
@@ -34,13 +42,49 @@ public class PowerSystem {
     /// <summary>The amount of energy the system current has.</summary>
     public float currentEnergy;
 
-    /// <summary>The health of the system (out of 100).  Less health = less efficiency.</summary>
-    public float health;
+    /// <summary>The damage of the system [0 - 1].  More damage = less efficiency.</summary>
+    public float damage;
+
+    /// <summary>The amount that the system is currently overclocked by.</summary>
+    public float overclock;
+
+    ///<summary>The current energy capacity with overclock and damage modifiers applied.</summary>
+    public float EnergyCapacity {
+        get {
+            if (damage > 0.0f) {
+                return energyCapacity * overclock * (1.0f - (damage * 0.5f)); 
+            }
+            else { return energyCapacity * overclock;  }
+        }
+    }
+
+    ///<summary>The current energy recharge with overclock and damage modifiers applied.</summary>
+    public float EnergyRecharge {
+        get {
+            if (damage > 0.0f) {
+                return energyRecharge * overclock * (1.0f - (damage * 0.5f));
+            }
+            else { return energyRecharge * overclock; }
+        }
+    }
 
     /// <summary>The free energy that is currently available for use.</summary>
     public float FreeEnergy {
         get { return currentEnergy - reservedEnergy; }
     }
+
+    /// <summary>Get the current health of the system (0 - 100).</summary>
+    public float Health {
+        get { return (1.0f - damage) * 100.0f; }
+    }
+
+    /// <summary>Whether the Power system is currently overclocked or not.</summary>
+    public bool IsOverclocked {
+        get { return overclock > 1.0f;  }
+    }
+
+    /// <summary>Keeps track of when the energy should tick up.</summary>
+    private float timeAccum;
 
     /// <summary>Default constructor.</summary>
     public PowerSystem() {
@@ -48,7 +92,8 @@ public class PowerSystem {
         energyRecharge = 0;
         reservedEnergy = 0;
         currentEnergy = 0;
-        health = 100;
+        damage = 0.0f;
+        overclock = 1.0f;
     }
 
     /// <summary>Copy constructor.</summary>
@@ -57,7 +102,8 @@ public class PowerSystem {
         energyRecharge = src.energyRecharge;
         reservedEnergy = src.reservedEnergy;
         currentEnergy = src.currentEnergy;
-        health = src.health;
+        damage = src.damage;
+        overclock = src.overclock;
     }
 
     /// <summary>
@@ -66,8 +112,12 @@ public class PowerSystem {
     /// </summary>
     /// <param name="energy">The amount of energy to add.</param>
     public void Add(float energy) {
-        currentEnergy += energy;
-        if (onUsableEnergyGained != null) { onUsableEnergyGained(FreeEnergy);  }
+        float capacity = EnergyCapacity;
+        if (currentEnergy < capacity) {
+            currentEnergy = Mathf.Min(currentEnergy + energy, capacity);
+            if (onUsableEnergyGained != null) { onUsableEnergyGained(FreeEnergy); }
+        }
+        
     }
 
     /// <summary>
@@ -120,6 +170,23 @@ public class PowerSystem {
 	}
 
     /// <summary>
+    /// Set the current percent damage the system has taken.
+    /// </summary>
+    /// <param name="newDamage">The percent damage the system has taken [0-1].</param>
+    public void SetDamage(float newDamage) {
+        float oldDamage = damage;
+        damage = newDamage;
+        if (oldDamage < newDamage) {
+            // Check for and take care of any energy loss due to loss of capacity.
+            CheckCapacity();
+
+            if (onSystemDamaged != null) {
+                onSystemDamaged(damage);
+            }            
+        }
+    }
+
+    /// <summary>
     /// Set the modifiers to the energyCapacity for the PowerSystem.
     /// <para>If the new energyCapacity is less than currentEnergy, the difference is Consumed.</para>
     /// </summary>
@@ -129,9 +196,8 @@ public class PowerSystem {
         energyCapacity.added = added;
         energyCapacity.modifier = modifier;
 
-        if (energyCapacity < currentEnergy) {
-            Consume(currentEnergy - energyCapacity);
-        }
+        // Check for and take care of any energy loss due to loss of capacity.
+        CheckCapacity();
     }
 
     /// <summary>
@@ -141,7 +207,56 @@ public class PowerSystem {
     /// <param name="modifier">The value to set the multiplicative modifier to.</param>
     public void SetEnergyRecharge(float added = 0.0f, float modifier = 1.0f) {
         energyRecharge.added = added;
-        energyCapacity.modifier = modifier;
+        energyRecharge.modifier = modifier;
+    }
+
+    /// <summary>
+    /// Ticks the power system to recharge the power.  It will 
+    /// accumulate power until it is >= to the rechargeRate/sec and 
+    /// then add it and reset to zero.
+    /// </summary>
+    /// <param name="deltaTime">The amount of time passed, in seconds.</param>
+    public void Tick(float deltaTime) {
+        // Increment the time accumulator.
+        timeAccum += deltaTime;
+        
+        // If >= 1 second, then do processing.
+        if (timeAccum >= 1.0f) {
+            float rechargeRate = EnergyRecharge;
+            float capacity = EnergyCapacity;
+
+            // If is overclocked, then apply damage based on overclock amount.
+            if (IsOverclocked) {
+                // Apply damage
+                UpdateDamage((overclock - 1.0f) * timeAccum);
+            }
+
+            // Increment the amount of energy we have stored.
+            if (currentEnergy < capacity) {
+                Add(rechargeRate * timeAccum);
+            }
+
+            timeAccum = 0.0f;
+        }
+    }
+
+    /// <summary>
+    /// Update the current amount of damage to the system.  If we are adding 
+    /// damage, we check to see if we need to consume any energy that we no longer have.
+    /// </summary>
+    /// <param name="damageDelta">The amount of damage to add or remove.</param>
+    public void UpdateDamage(float damageDelta) {
+        damage = Mathf.Max(damage + damageDelta, 0);
+
+        // If the system took damage, take care of any energy loss.
+        if (damageDelta > 0.0f) {
+            CheckCapacity();
+
+            // Broadcast that the system took damage to any listeners.
+            if (onSystemDamaged != null) {
+                onSystemDamaged(damage);
+            }
+        }
     }
 
     /// <summary>
@@ -154,9 +269,8 @@ public class PowerSystem {
         energyCapacity.added += addDelta;
         energyCapacity.modifier += modifierDelta;
 
-        if (energyCapacity < currentEnergy) {
-            Consume(currentEnergy - energyCapacity);
-        }
+        // Check for and take care of any energy loss due to loss of capacity.
+        CheckCapacity();
     }
 
     /// <summary>
@@ -166,6 +280,17 @@ public class PowerSystem {
     /// <param name="modifierDelta">The amount to change the multiplicative modifier by.</param>
     public void UpdateEnergyRecharge(float addDelta = 0.0f, float modifierDelta = 0.0f) {
         energyRecharge.added += addDelta;
-        energyCapacity.modifier += modifierDelta;
+        energyRecharge.modifier += modifierDelta;
+    }
+
+    /// <summary>
+    /// Checks to see if the current stored energy is > the energy capacity.
+    /// If it is, then we consume the excess energy.
+    /// </summary>
+    private void CheckCapacity() {
+        float capacity = EnergyCapacity;
+        if (capacity < currentEnergy) {
+            Consume(currentEnergy - capacity);
+        }
     }
 }
