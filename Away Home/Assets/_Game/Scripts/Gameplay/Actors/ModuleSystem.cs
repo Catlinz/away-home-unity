@@ -40,26 +40,9 @@ public class ModuleSystem {
     /// <summary>The list of ShipSockets that the ship has.</summary>
 	public ShipSocket[] sockets;
 
-    /// <summary>The list of current installed passive modules.</summary>
-	private ShipModuleClass[] passiveModules;
-
 
 	public ModuleSystem() {
 
-	}
-
-    /// <summary>
-    /// Handles adding a new Passive module that has just been initialized.
-    /// </summary>
-    /// <param name="module">The new passive module to store.</param>
-	private void AddPassiveModule(ShipModuleClass module) {
-        int newLen = (passiveModules != null) ? passiveModules.Length + 1 : 1;
-        ShipModuleClass[] newArr = new ShipModuleClass[newLen];
-        if (passiveModules != null) {
-            passiveModules.CopyTo(newArr, 0);
-        }
-        newArr[newLen - 1] = module;
-        passiveModules = newArr;
 	}
 
 	/// <summary>
@@ -141,7 +124,7 @@ public class ModuleSystem {
 
         // If the module is a passive module, then handle it.
 		if (module.GetModuleType() == ShipModuleClass.ModuleType.Passive) {
-			AddPassiveModule(module);
+			//AddPassiveModule(module);
 		}
         else {
             // The module is an active module, so add it to the appriopriate activation group.

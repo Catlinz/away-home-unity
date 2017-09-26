@@ -81,3 +81,67 @@ public class ShipSocket {
         this.module = module;
     }
 }
+
+[System.Serializable]
+public class SocketGroup
+{
+    private ShipSocket[] sockets;
+
+    public SocketGroup() {
+        sockets = null;
+    }
+
+    /// <summary>
+    /// Add a socket into the socket group, if it doesn't already exist.
+    /// </summary>
+    /// <param name="socket">The ShipSocket to add to the group.</param>
+    /// <returns>True if the socket was added, false if it already is in the group.</returns>
+    public bool Add(ShipSocket socket) {
+        if (Contains(socket.socketName)) { return false; }
+
+        sockets = AHArray.Added(sockets, socket);
+        return true;
+    }
+
+    /// <summary>
+    /// Check to see if a socket is in the group.
+    /// </summary>
+    /// <param name="socketName">The name of the socket to look for.</param>
+    /// <returns>True if the socket is in the group.</returns>
+    public bool Contains(string socketName) {
+        if (sockets == null) { return false; }
+
+        int numSockets = sockets.Length;
+        for (int i = 0; i < numSockets; ++i) {
+            if (sockets[i].socketName == socketName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Remove the specified socket from the socket group.
+    /// </summary>
+    /// <param name="socketName">The name of the socket to remove.</param>
+    /// <returns>The ShipSocket that was removed, or null if the socket wasn't found.</returns>
+    public ShipSocket Remove(string socketName) {
+        for (int i = 0; i < sockets.Length; ++i) {
+            if (sockets[i].socketName == socketName) {
+                ShipSocket socket = sockets[i];
+                sockets = AHArray.Removed(sockets, i);
+                return socket;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Remove the specified socket from the socket group.
+    /// </summary>
+    /// <param name="socket">The ShipSocket to remove.</param>
+    /// <returns>The ShipSocket that was removed or null if it wasn't found.</returns>
+    public ShipSocket Remove(ShipSocket socket) {
+        return Remove(socket.socketName);
+    }
+}
