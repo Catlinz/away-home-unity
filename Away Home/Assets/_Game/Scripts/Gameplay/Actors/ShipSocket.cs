@@ -82,10 +82,17 @@ public class ShipSocket {
     }
 }
 
+/// <summary>
+/// The SocketGroup holds a group of Sockets that can be activated as a group.
+/// </summary>
 [System.Serializable]
 public class SocketGroup
 {
+    /// <summary>The list of sockets in the group.</summary>
     private ShipSocket[] sockets;
+
+    /// <summary>The current target for the socket group.</summary>
+    private ITargetable target;
 
     public SocketGroup() {
         sockets = null;
@@ -143,5 +150,44 @@ public class SocketGroup
     /// <returns>The ShipSocket that was removed or null if it wasn't found.</returns>
     public ShipSocket Remove(ShipSocket socket) {
         return Remove(socket.socketName);
+    }
+
+    /// <summary>
+    /// Set the target for the socket group.  Makes sure to unset the 
+    /// previous target and listen for when the target is destroyed.
+    /// </summary>
+    /// <param name="newTarget">The new target for the modules in the socket group.</param>
+    public void SetTarget(ITargetable newTarget) {
+        if (target != null) {
+            target.OnTargetDestroyed -= HandleTargetDestroyed;
+        }
+
+        target = newTarget;
+        if (target != null) {
+            target.OnTargetDestroyed += HandleTargetDestroyed;
+        }
+
+        int numSockets = sockets.Length;
+        for (int i = 0; i < numSockets; ++i) {
+            if (sockets[i].CanHaveTarget) {
+                sockets[i].SetTarget(target);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handle when the target of the socket group has been destroyed.
+    /// </summary>
+    /// <param name="destroyedTarget">The target that was destroyed.</param>
+    private void HandleTargetDestroyed(ITargetable destroyedTarget) {
+        int numSockets = sockets.Length;
+        for (int i = 0; i < numSockets; ++i) {
+            if (sockets[i].HasTarget(destroyedTarget)) {
+                sockets[i].SetTarget(null);
+            }
+        }
+        if (destroyedTarget == target) {
+            target = null;
+        }
     }
 }

@@ -16,8 +16,8 @@ public class PassiveModule : ShipModuleClass {
 
     /// <summary>Allocates the idle CPU and reserves the idle energy required.</summary>
     /// <param name="ship">The ship to enable the Module for.</param>
-	public override void EnableOnShip(ShipActorComponent ship) {
-		base.EnableOnShip(ship);
+	public override bool EnableOnShip(ShipActorComponent ship) {
+		return base.EnableOnShip(ship);
 	}
 
 	/// <summary>Initializes the Module component from an asset for the module.</summary>

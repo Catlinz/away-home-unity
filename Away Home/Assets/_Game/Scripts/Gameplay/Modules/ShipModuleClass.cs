@@ -10,48 +10,73 @@ public class ShipModuleClass : MonoBehaviour {
 	/// <summary>The basic types of modules that can be created.</summary>
 	public enum ModuleType { Passive, Active };
 
-    /// <summary>Whether or not the module is currently enabled.</summary>
-    private bool isEnabled;
-
-	/// <summary>The asset that was used to construct the Module from.</summary>
-	private InstallableModuleAsset moduleAsset;
-
+    #region PUBLIC_PROPS
     /// <summary>Get the asset that was used to construct the Module.</summary>
     public InstallableModuleAsset Asset {
         get { return moduleAsset; }
     }
 
-	/// <summary>The amount of power consumed by the Module when enabled.</summary>
-	public int IdleEnergyDrain {
-		get { return moduleAsset.idleEnergyDrain; }
-	}
+    /// <summary>The amount of CPU resources consumed by the Module when enabled.</summary>
+    public int IdleCpuUsage {
+        get { return moduleAsset.idleCpuUsage; }
+    }
 
-	/// <summary>The amount of CPU resources consumed by the Module when enabled.</summary>
-	public int IdleCpuUsage {
-		get { return moduleAsset.idleCpuUsage; }
-	}
+    /// <summary>The amount of power consumed by the Module when enabled.</summary>
+    public int IdleEnergyDrain {
+        get { return moduleAsset.idleEnergyDrain; }
+    }
 
     /// <summary>Whether or not the Module is currently enabled.</summary>
     public bool IsEnabled {
         get { return isEnabled; }
     }
+    #endregion
 
-	/// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
-	/// <param name="ship">The ship to disable the module on.</param>
-	public virtual void DisableOnShip(ShipActorComponent ship) {
-		ship.computer.DeallocateCpu(IdleCpuUsage);
-		ship.power.Free(IdleEnergyDrain);
+    #region PROTECTED_VARS
+    /// <summary>Whether or not the module is currently enabled.</summary>
+    protected bool isEnabled;
+
+    /// <summary>The asset that was used to construct the Module from.</summary>
+    protected InstallableModuleAsset moduleAsset;
+
+    /// <summary>A reference to the computer system the module uses when enabled.</summary>
+    protected ComputerSystem computer;
+
+    /// <summary>A reference to the power system the module uses when enabled.</summary>
+    protected PowerSystem power;
+    #endregion
+
+    /// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
+    /// <param name="ship">The ship to disable the module on.</param>
+    public virtual void DisableOnShip(ShipActorComponent ship) {
+        if (computer != null && power != null) {
+            computer.DeallocateCpu(IdleCpuUsage);
+            power.Free(IdleEnergyDrain);
+            computer = null;
+            power = null;
+        }
 
         isEnabled = false;
 	}
 
 	/// <summary>Allocates the idle CPU and reserves the idle energy required.</summary>
 	/// <param name="ship">The ship to enable the Module for.</param>
-	public virtual void EnableOnShip(ShipActorComponent ship) {
-		ship.computer.AllocateCpu(IdleCpuUsage);
-		ship.power.Reserve(IdleEnergyDrain);
+    /// <returns>True if the module was successfully enabled (or was already enabled).</returns>
+	public virtual bool EnableOnShip(ShipActorComponent ship) {
+        if (isEnabled) { return true; }
 
-        isEnabled = true;
+		if (ship.computer.AllocateCpu(IdleCpuUsage)) {
+            if (ship.power.Reserve(IdleEnergyDrain)) {
+                computer = ship.computer;
+                power = ship.power;
+                isEnabled = true;
+            }
+            else {
+                ship.computer.DeallocateCpu(IdleCpuUsage);
+            }
+        }
+
+        return isEnabled;
 	}
 
 	/// <summary>
