@@ -40,9 +40,35 @@ public class ModuleSystem {
     /// <summary>The list of ShipSockets that the ship has.</summary>
 	public ShipSocket[] sockets;
 
+    /// <summary>
+    /// The list of ShipSocket groups for the ship.  Always has at least 
+    /// "passive" and "default" groups.
+    /// </summary>
+    public SocketGroup[] groups;
 
+    /// <summary>
+    /// Creates a new <c>ModuleSystem</c>.  By default, it creates four socket groups: 
+    /// <list type="bullet">
+    /// <item>
+    /// <description>Primary: For the primary weapons.</description>
+    /// </item>
+    /// <item>
+    /// <description>Secondary: For the secondary weapons.</description>
+    /// </item>
+    /// <item>
+    /// <description>Utility: For the utility modules.</description>
+    /// </item>
+    /// <item>
+    /// <description>Passive: For the passive modules.</description>
+    /// </item>
+    /// </list>
+    /// </summary>
 	public ModuleSystem() {
-
+        groups = new SocketGroup[(int)SocketGroup.Index.Passive + 1];
+        groups[(int)SocketGroup.Index.Primary] = new SocketGroup("Primary");
+        groups[(int)SocketGroup.Index.Secondary] = new SocketGroup("Secondary");
+        groups[(int)SocketGroup.Index.Utility] = new SocketGroup("Utility");
+        groups[(int)SocketGroup.Index.Passive] = new SocketGroup("Passive");
 	}
 
 	/// <summary>
@@ -82,6 +108,37 @@ public class ModuleSystem {
 		}
 	}
 
+    /// <summary>
+    /// Create a new <c>SocketGroup</c> and add it to the list.
+    /// </summary>
+    /// <param name="newName">The name of the new <c>SocketGroup</c> to create.</param>
+    /// <returns>The newly created group, or null if a group with the same name already exists.</returns>
+    public SocketGroup CreateGroup(string newName) {
+        if (HasGroup(newName)) { return null; }
+
+        SocketGroup newGroup = new SocketGroup(newName);
+        groups = AHArray.Added(groups, newGroup);
+
+        return newGroup;
+    }
+
+    /// TODO: DELETE SOCKET GROUP
+
+    /// <summary>
+    /// Get a <c>SocketGroup</c> by name.
+    /// </summary>
+    /// <param name="groupName">The name of the <c>SocketGroup</c> to get.</param>
+    /// <returns>The <c>SocketGroup</c> or null if it wasn't found.</returns>
+    public SocketGroup GetGroup(string groupName) {
+        int numGroups = groups.Length;
+        for (int i = 0; i < numGroups; ++i) {
+            if (groups[i].groupName == groupName) {
+                return groups[i];
+            }
+        }
+        return null;
+    }
+
 	/// <summary>
 	/// Get the details about a ship socket by name.
 	/// </summary>
@@ -111,6 +168,19 @@ public class ModuleSystem {
     }
 
     /// <summary>
+    /// Check to see if a <c>SocketGroup</c> with the provided name exists.
+    /// </summary>
+    /// <param name="groupName">The name of the <c>SocketGroup</c> to search for.</param>
+    /// <returns>True if the the group exists already.</returns>
+    public bool HasGroup(string groupName) {
+        int numGroups = groups.Length;
+        for (int i = 0; i < numGroups; ++i) {
+            if (groups[i].groupName == groupName) { return true; }
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Called to initialize the module after it has been created and physically added to 
     /// the ship GameObject.  This method makes sure the Module is initialized from the asset and 
     /// socket values, and added to the appropriate group or array if it is an Active or Passive module.
@@ -124,7 +194,7 @@ public class ModuleSystem {
 
         // If the module is a passive module, then handle it.
 		if (module.GetModuleType() == ShipModuleClass.ModuleType.Passive) {
-			//AddPassiveModule(module);
+            groups[SocketGroup.PassiveIndex].Add(socket);
 		}
         else {
             // The module is an active module, so add it to the appriopriate activation group.
@@ -147,8 +217,8 @@ public class ModuleSystem {
 
         ShipModuleClass module = socket.Module;
 
-        // Remove the module from the socket.
-        socket.SetModule(null);
+        // Reset the socket that the module was in.
+        ResetSocket(socket);
 
         if (module) {
             InstallableModuleAsset asset = module.Asset;
@@ -159,6 +229,20 @@ public class ModuleSystem {
             return asset;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Reset a socket when a module is removed from it.  This will remove it from any groups 
+    /// and clear the socket.
+    /// </summary>
+    /// <param name="socket">The Socket to reset.</param>
+    public void ResetSocket(ShipSocket socket) {
+        // Make sure the socket isn't in any groups anymore.
+        for (int i = 0; i < groups.Length; ++i) {
+            groups[i].Remove(socket);
+        }
+        // Clear anything in the socket.
+        socket.Clear();
     }
 
     /// <summary>

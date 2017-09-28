@@ -46,6 +46,15 @@ public class ShipModuleClass : MonoBehaviour {
     protected PowerSystem power;
     #endregion
 
+    /// <summary>
+    /// Test whether or not the module can target the provided target.
+    /// </summary>
+    /// <param name="newTarget">The targetable object to test.</param>
+    /// <returns>True if it is a valid target for the module.</returns>
+    public virtual bool CanTarget(ITargetable newTarget) {
+        return false;
+    }
+
     /// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
     /// <param name="ship">The ship to disable the module on.</param>
     public virtual void DisableOnShip(ShipActorComponent ship) {
@@ -87,6 +96,15 @@ public class ShipModuleClass : MonoBehaviour {
 		return ModuleType.Passive;
 	}
 
+    /// <summary>
+    /// Test to see if the module is currently targeting the provided targetable object.
+    /// </summary>
+    /// <param name="target">The targetable object to test.</param>
+    /// <returns>True if the module is targeting the provided target.</returns>
+    public virtual bool HasTarget(ITargetable testTarget) {
+        return false;
+    }
+
 	/// <summary>Initializes the Module component from an asset for the module.</summary>
 	/// <param name="asset">The module asset to initialize from.</param>
 	/// <param name="socket">The ShipSocket that the module is being installed on.</param>
@@ -94,4 +112,12 @@ public class ShipModuleClass : MonoBehaviour {
 		moduleAsset = asset;
         socket.SetModule(this);
 	}
+
+    /// <summary>
+    /// Sets the current target for the module, if it can have a target.
+    /// </summary>
+    /// <param name="newTarget">The new targetable object to target.</param>
+    public virtual void SetTarget(ITargetable newTarget) {
+        return;
+    }
 }

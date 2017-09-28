@@ -26,9 +26,9 @@ public struct SocketArc {
 /// </summary>
 [System.Serializable]
 public class ShipSocket {
-
-	/// <summary>The name of the socket to identify it by.</summary>
-	public string socketName;
+    #region PUBLIC_VARS
+    /// <summary>The name of the socket to identify it by.</summary>
+    public string socketName;
 
 	/// <summary>The maximum CPU bandwidth the socket can supply.</summary>
 	public ModifiableFloat maxCpuBandwidth;
@@ -44,12 +44,18 @@ public class ShipSocket {
 	public Vector3 position;
     /// <summary>The rotation of the socket relative to the ship.</summary>
 	public Quaternion rotation;
+    #endregion
 
+    #region PRIVATE_VARS
     /// <summary>The module that is currently installed in the socket (if any).</summary>
     private ShipModuleClass module;
 
+    #endregion
+
+    #region PUBLIC_PROPS
     /// <summary>The module that is current installed in the socket (if any).</summary>
     public ShipModuleClass Module { get { return module;  } }
+    #endregion
 
     /// <summary>Default constructor</summary>
     public ShipSocket() {
@@ -74,11 +80,47 @@ public class ShipSocket {
     }
 
     /// <summary>
+    /// Check if the socket has a module installed that can target the provided target.
+    /// </summary>
+    /// <param name="target">The targetable object to test.</param>
+    /// <returns>True if there is a module installed that can target the target.</returns>
+    public bool CanTarget(ITargetable target) {
+        return (module != null && module.CanTarget(target));
+    }
+
+    /// <summary>
+    /// Clear any references from the Socket, for when the module is removed from it.
+    /// </summary>
+    public void Clear() {
+        SetTarget(null);
+        module = null;
+    }
+
+    /// <summary>
+    /// Check if the socket has a module installed that is currently targeting target.
+    /// </summary>
+    /// <param name="target">The targetable object to test.</param>
+    /// <returns>True if there is a module installed that is currently targeting target.</returns>
+    public bool HasTarget(ITargetable target) {
+        return (module != null && module.HasTarget(target));
+    }
+
+    /// <summary>
     /// Set the module that is currently installed in the socket.
     /// </summary>
     /// <param name="module">The module to install into the socket.</param>
     public void SetModule(ShipModuleClass module) {
         this.module = module;
+    }
+
+    /// <summary>
+    /// Set the current target for the installed module (if any).
+    /// </summary>
+    /// <param name="target">The targetable object for the module to target.</param>
+    public void SetTarget(ITargetable target) {
+        if (module) {
+            module.SetTarget(target);
+        }
     }
 }
 
@@ -88,14 +130,30 @@ public class ShipSocket {
 [System.Serializable]
 public class SocketGroup
 {
+    /// <summary>Enum of constants to use for default socket groups indexes.</summary>
+    public enum Index { Primary, Secondary, Utility, Passive };
+
+    /// <summary>The name of the socket group.</summary>
+    public string groupName;
+    
+
     /// <summary>The list of sockets in the group.</summary>
     private ShipSocket[] sockets;
 
     /// <summary>The current target for the socket group.</summary>
     private ITargetable target;
 
+    /// <summary>Default constructor.</summary>
     public SocketGroup() {
+        groupName = null;
         sockets = null;
+        target = null;
+    }
+
+    /// <summary>Create a new named SocketGroup.</summary>
+    /// <param name="name"></param>
+    public SocketGroup(string name) : this() {
+        groupName = name;
     }
 
     /// <summary>
@@ -169,7 +227,7 @@ public class SocketGroup
 
         int numSockets = sockets.Length;
         for (int i = 0; i < numSockets; ++i) {
-            if (sockets[i].CanHaveTarget) {
+            if (sockets[i].CanTarget(newTarget)) {
                 sockets[i].SetTarget(target);
             }
         }
