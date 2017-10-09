@@ -34,6 +34,23 @@ public class OperationResult {
 		this.message = message;
 	}
 
-    /// <summary>A simple shortcut for returning new OperationResult(OperationResult.Status.OK).</summary>
-	public readonly static OperationResult OK = new OperationResult(Status.OK);
+	/// <summary>Shortcut method for creating a new OK <c>OperationResult</c>.</summary>
+	public static OperationResult OK(string message=null) {
+		return new OperationResult(OperationResult.Status.OK, message);
+	}
+
+	/// <summary>Shortcut method for creating a new PARTIAL <c>OperationResult</c>.</summary>
+	public static OperationResult Partial(string message=null) {
+		return new OperationResult(OperationResult.Status.PARTIAL, message);
+	}
+
+	/// <summary>Shortcut method for creating a new FAIL <c>OperationResult</c>.</summary>
+	public static OperationResult Fail(string message=null) {
+		return new OperationResult(OperationResult.Status.FAIL, message);
+	}
+
+	/// <summary>Shortcut method for creating a new CANCEL <c>OperationResult</c>.</summary>
+	public static OperationResult Cancel(string message=null) {
+		return new OperationResult(OperationResult.Status.CANCEL, message);
+	}
 }

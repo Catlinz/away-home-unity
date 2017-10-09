@@ -65,9 +65,9 @@ public class ModuleSystem {
     /// </summary>
 	public ModuleSystem() {
         groups = new ShipSocketGroup[(int)ShipSocketGroup.Index.Passive + 1];
-        groups[(int)ShipSocketGroup.Index.Primary] = new ShipSocketGroup("Primary", ShipSocketGroup.Flags.Active);
-		groups[(int)ShipSocketGroup.Index.Secondary] = new ShipSocketGroup("Secondary", ShipSocketGroup.Flags.Active);
-		groups[(int)ShipSocketGroup.Index.Utility] = new ShipSocketGroup("Utility", ShipSocketGroup.Flags.Active);
+        groups[(int)ShipSocketGroup.Index.Primary] = new ShipSocketGroup("Primary", ShipSocketGroup.Flags.Trigger);
+		groups[(int)ShipSocketGroup.Index.Secondary] = new ShipSocketGroup("Secondary", ShipSocketGroup.Flags.Trigger);
+		groups[(int)ShipSocketGroup.Index.Utility] = new ShipSocketGroup("Utility", ShipSocketGroup.Flags.Active | ShipSocketGroup.Flags.Trigger);
 		groups[(int)ShipSocketGroup.Index.Passive] = new ShipSocketGroup("Passive", ShipSocketGroup.Flags.Passive);
 	}
 
@@ -95,16 +95,16 @@ public class ModuleSystem {
 	/// </returns>
 	public OperationResult CanInstallInSocket(InstallableModuleAsset moduleAsset, ShipSocket socket) {
         if (socket.Module != null) {
-            return new OperationResult(OperationResult.Status.FAIL, "Cannot install Module, socket is already occupied.");
+            return OperationResult.Fail("Cannot install Module, socket is already occupied.");
         }
 		if (socket.maxEnergyOutput < moduleAsset.idleEnergyDrain) {
-			return new OperationResult(OperationResult.Status.FAIL, "Cannot install Module in socket, not enough power output.");
+			return OperationResult.Fail("Cannot install Module in socket, not enough power output.");
 		} 
 		else if (socket.maxCpuBandwidth < moduleAsset.idleCpuUsage) { 
-			return new OperationResult(OperationResult.Status.FAIL, "Cannot install Module in socket, not enough CPU bandwidth.");
+			return OperationResult.Fail("Cannot install Module in socket, not enough CPU bandwidth.");
 		}
 		else {
-			return OperationResult.OK;
+			return OperationResult.OK();
 		}
 	}
 
@@ -120,10 +120,10 @@ public class ModuleSystem {
 		ShipSocketGroup addTo = GetSocketGroup(groupName);
 
 		if (toAdd == null) {
-			return new OperationResult(OperationResult.Status.FAIL, "Cannot find module " + socketName + " to add to group " + groupName + ".");
+			return OperationResult.Fail("Cannot find module " + socketName + " to add to group " + groupName + ".");
 		}
 		if (addTo == null) {
-			return new OperationResult(OperationResult.Status.FAIL, "Cannot find group " + groupName + " to add the module to.");
+			return OperationResult.Fail("Cannot find group " + groupName + " to add the module to.");
 		}
 
 		// Make sure to remove the socket from any other socket groups first.
@@ -135,7 +135,7 @@ public class ModuleSystem {
 		// Then add it to the new socket group.
 		addTo.Add(toAdd);
 
-		return OperationResult.OK;
+		return OperationResult.OK();
 	}
 
     /// <summary>
@@ -252,7 +252,8 @@ public class ModuleSystem {
 		module.InitFromAssetInSocket(moduleAsset, socket);
 
         // If the module is a passive module, then handle it.
-		if (module.GetModuleType() == ShipModuleClass.ModuleType.Passive) {
+		ShipModuleClass.TypeFlags typeFlags = module.GetTypeFlags();
+		if ((typeFlags & ShipModuleClass.TypeFlags.Passive) == ShipModuleClass.TypeFlags.Passive) {
 			groups[(int)ShipSocketGroup.Index.Passive].Add(socket);
 		}
         else {
@@ -315,17 +316,17 @@ public class ModuleSystem {
     /// a FAIL if there is no module in the socket, otherwise it returns OperationResult.OK
     /// </returns>
     public OperationResult TryDisable(ShipSocket socket, ShipActorComponent ship) {
-        if (socket.Module == null) { return new OperationResult(OperationResult.Status.FAIL, "No module to disable."); }
+        if (socket.Module == null) { return OperationResult.Fail("No module to disable."); }
 
         ShipModuleClass module = socket.Module;
         if (!module.IsEnabled) {
-            return new OperationResult(OperationResult.Status.PARTIAL, "Module is already disabled.");
+            return OperationResult.Partial("Module is already disabled.");
         }
 
-        module.DisableOnShip(ship);
+        module.DisableModule();
 
         if (onModuleDisabled != null) { onModuleDisabled(module); }
-        return OperationResult.OK;
+		return OperationResult.OK();
     }
 
     /// <summary>
@@ -340,21 +341,21 @@ public class ModuleSystem {
     /// </returns>
 	public OperationResult TryEnable(ShipSocket socket, ShipActorComponent ship) {
         if (socket.Module == null) {
-            return new OperationResult(OperationResult.Status.FAIL, "No module to disable.");
+            return OperationResult.Fail("No module to disable.");
         }
 
         ShipModuleClass module = socket.Module;
 
 		if (CanEnable(module, ship)) {
-			module.EnableOnShip(ship);
+			module.EnableModule();
             
             // Notify any ModuleEnabled delegates.
             if (onModuleEnabled != null) { onModuleEnabled(module); }
 
-			return OperationResult.OK;
+			return OperationResult.OK();
 		}
 		else {
-			return new OperationResult(OperationResult.Status.PARTIAL, "Not enough power or CPU bandwidth to enable the Module.");
+			return OperationResult.Partial("Not enough power or CPU bandwidth to enable the Module.");
 		}
 	}
 }

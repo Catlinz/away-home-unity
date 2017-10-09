@@ -7,8 +7,8 @@ using UnityEngine;
 /// </summary>
 public class ShipModuleClass : MonoBehaviour {
 
-	/// <summary>The basic types of modules that can be created.</summary>
-	public enum ModuleType { Passive, Active };
+	/// <summary>A list of flags that can describe a type of module.</summary>
+	[System.Flags] public enum TypeFlags { None = 0, Passive = 0x1, Active = 0x2, Tracking = 0x4, Trigger = 0x8 };
 
     #region PUBLIC_PROPS
     /// <summary>Get the asset that was used to construct the Module.</summary>
@@ -39,11 +39,8 @@ public class ShipModuleClass : MonoBehaviour {
     /// <summary>The asset that was used to construct the Module from.</summary>
     protected InstallableModuleAsset moduleAsset;
 
-    /// <summary>A reference to the computer system the module uses when enabled.</summary>
-    protected ComputerSystem computer;
-
-    /// <summary>A reference to the power system the module uses when enabled.</summary>
-    protected PowerSystem power;
+    /// <summary>A reference to the ship the module is enabled on.</summary>
+    protected ShipActorComponent ship;
     #endregion
 
     /// <summary>
@@ -56,44 +53,79 @@ public class ShipModuleClass : MonoBehaviour {
     }
 
     /// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
-    /// <param name="ship">The ship to disable the module on.</param>
-    public virtual void DisableOnShip(ShipActorComponent ship) {
-        if (computer != null && power != null) {
-            computer.DeallocateCpu(IdleCpuUsage);
-            power.Free(IdleEnergyDrain);
-            computer = null;
-            power = null;
-        }
+	/// <returns>
+	/// A <c>ModuleResult</c> to indicate the result of disabling the module.
+	/// <list type="bullet">
+	/// <item>
+	/// <description><c>AlreadyDisabled</c> if the module is already disabled.</description>
+	/// </item>
+	/// <item>
+	/// <description><c>InvalidShip</c> if the ship reference is null already.</description>
+	/// </item>
+	/// </list>
+	/// </returns>
+	public virtual ModuleResult DisableModule() {
+		if (!isEnabled) { return ModuleResult.AlreadyDisabled; }
 
-        isEnabled = false;
+		isEnabled = false;
+		if (ship != null) {
+			ship.computer.DeallocateCpu(IdleCpuUsage);
+			ship.power.Free(IdleEnergyDrain);
+			ship = null;
+			return ModuleResult.Success;
+		}
+		else {
+			return ModuleResult.InvalidShip;
+		}
 	}
 
 	/// <summary>Allocates the idle CPU and reserves the idle energy required.</summary>
-	/// <param name="ship">The ship to enable the Module for.</param>
-    /// <returns>True if the module was successfully enabled (or was already enabled).</returns>
-	public virtual bool EnableOnShip(ShipActorComponent ship) {
-        if (isEnabled) { return true; }
+	/// <returns>
+	/// A <c>ModuleResult</c> to indicate the result of disabling the module.
+	/// <list type="bullet">
+	/// <item>
+	/// <description><c>AlreadyEnabled</c> if the module is already enabled.</description>
+	/// </item>
+	/// <item>
+	/// <description><c>InvalidShip</c> if the ship reference is null.</description>
+	/// </item>
+	/// <item>
+	/// <description><c>InsufficientPower</c> if there is not enough power to enable the module.</description>
+	/// </item>
+	/// <item>
+	/// <description><c>InsufficientCpu</c> if there is not enough CPU to enable the module.</description>
+	/// </item>
+	/// </list>
+	/// </returns>
+	public virtual ModuleResult EnableModule() {
+        if (isEnabled) { return ModuleResult.AlreadyEnabled; }
+
+		ship = gameObject.GetComponentInParent<ShipActorComponent>();
+		if (!ship) { return ModuleResult.InvalidShip; }
 
 		if (ship.computer.AllocateCpu(IdleCpuUsage)) {
-            if (ship.power.Reserve(IdleEnergyDrain)) {
-                computer = ship.computer;
-                power = ship.power;
-                isEnabled = true;
-            }
-            else {
-                ship.computer.DeallocateCpu(IdleCpuUsage);
-            }
-        }
-
-        return isEnabled;
+			if (ship.power.Reserve(IdleEnergyDrain)) {
+				isEnabled = true;
+				return ModuleResult.Success;
+			}
+			else { // Not enough power to enable module.
+				ship.computer.DeallocateCpu(IdleCpuUsage);
+				ship = null;
+				return ModuleResult.InsufficientPower;
+			}
+		}
+		else { // Not enough CPU to enable module.
+			ship = null;
+			return ModuleResult.InsufficientCpu;
+		}
 	}
 
 	/// <summary>
-	/// Gets the type of the module.
+	/// Gets the details about the type of the module.
 	/// </summary>
-	/// <returns>The module type.  By default, returns Passive.</returns>
-	public virtual ModuleType GetModuleType() { 
-		return ModuleType.Passive;
+	/// <returns>The module type flags.</returns>
+	public virtual TypeFlags GetTypeFlags() { 
+		return TypeFlags.None;
 	}
 
     /// <summary>
@@ -108,9 +140,11 @@ public class ShipModuleClass : MonoBehaviour {
 	/// <summary>Initializes the Module component from an asset for the module.</summary>
 	/// <param name="asset">The module asset to initialize from.</param>
 	/// <param name="socket">The ShipSocket that the module is being installed on.</param>
-	public virtual void InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocket socket) {
+	/// <returns>ModuleResult.Success</returns>
+	public virtual ModuleResult InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocket socket) {
 		moduleAsset = asset;
         socket.SetModule(this);
+		return ModuleResult.Success;
 	}
 
     /// <summary>

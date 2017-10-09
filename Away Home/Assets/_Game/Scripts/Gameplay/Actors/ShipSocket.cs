@@ -136,7 +136,15 @@ public class ShipSocketGroup
 	/// <summary>
 	/// An enum of the different flags a socket group can have.
 	/// </summary>
-	[System.Flags] public enum Flags { None = 0, CanDelete = 0x1, CanRename = 0x2, Passive = 0x4, Active = 0x8};
+	[System.Flags] public enum Flags { 
+		None = 0, 
+		CanDelete = 0x1, 
+		CanRename = 0x2, 
+		Passive = 0x4, 
+		Active = 0x8,
+		Trigger = 0x10,
+		Tracking = 0x20
+	};
 
     /// <summary>The name of the socket group.</summary>
     public string groupName;
@@ -181,7 +189,7 @@ public class ShipSocketGroup
     /// <param name="name"></param>
 	public ShipSocketGroup(
 		string name, 
-		Flags flags = Flags.CanDelete | Flags.CanRename | Flags.Passive | Flags.Active
+		Flags flags = Flags.CanDelete | Flags.CanRename | Flags.Passive | Flags.Active | Flags.Trigger | Flags.Tracking
 	) : this() {
         groupName = name;
 		this.flags = flags;
@@ -211,13 +219,17 @@ public class ShipSocketGroup
 
 		// See if the socket group can take the module.
 		ShipModuleClass module = socket.Module;
-		ShipModuleClass.ModuleType modType = module.GetModuleType();
-		if (modType == ShipModuleClass.ModuleType.Passive) {
+		ShipModuleClass.TypeFlags typeFlags = module.GetTypeFlags();
+		if ((typeFlags & ShipModuleClass.TypeFlags.Passive) == ShipModuleClass.TypeFlags.Passive) {
 			return (flags & Flags.Passive) == Flags.Passive;
 		}
 
-		if (modType == ShipModuleClass.ModuleType.Active) {
+		if ((typeFlags & ShipModuleClass.TypeFlags.Active) == ShipModuleClass.TypeFlags.Active) {
 			return (flags & Flags.Active) == Flags.Active;
+		}
+
+		if ((typeFlags & ShipModuleClass.TypeFlags.Trigger) == ShipModuleClass.TypeFlags.Trigger) {
+			return (flags & Flags.Trigger) == Flags.Trigger;
 		}
 
 		// Dunno what happened, so no.
