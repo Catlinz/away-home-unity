@@ -125,17 +125,44 @@ public class ShipSocket {
 }
 
 /// <summary>
-/// The SocketGroup holds a group of Sockets that can be activated as a group.
+/// The <c>ShipSocketGroup</c> holds a group of <c>ShipSocket</c>s that can be activated as a group.
 /// </summary>
 [System.Serializable]
-public class SocketGroup
+public class ShipSocketGroup
 {
     /// <summary>Enum of constants to use for default socket groups indexes.</summary>
     public enum Index { Primary, Secondary, Utility, Passive };
 
+	/// <summary>
+	/// An enum of the different flags a socket group can have.
+	/// </summary>
+	[System.Flags] public enum Flags { None = 0, CanDelete = 0x1, CanRename = 0x2, Passive = 0x4, Active = 0x8};
+
     /// <summary>The name of the socket group.</summary>
     public string groupName;
-    
+
+	/// <summary>The flags that are set on the SocketGroup.</summary>
+	public Flags flags;
+
+	/// <summary>
+	/// Gets a value indicating whether this instance can be deleted
+	/// </summary>
+	/// <value><c>true</c> if this instance can be deleted; otherwise, <c>false</c>.</value>
+	public bool CanDelete { 
+		get { 
+			return (flags & Flags.CanDelete) != Flags.CanDelete; 
+		} 
+	}
+
+	/// <summary>
+	/// Gets a value indicating whether this instance can be renamed
+	/// </summary>
+	/// <value><c>true</c> if this instance can be renamed; otherwise, <c>false</c>.</value>
+	public bool CanRename { 
+		get { 
+			return (flags & Flags.CanRename) != Flags.CanRename; 
+		} 
+	}
 
     /// <summary>The list of sockets in the group.</summary>
     private ShipSocket[] sockets;
@@ -144,7 +171,7 @@ public class SocketGroup
     private ITargetable target;
 
     /// <summary>Default constructor.</summary>
-    public SocketGroup() {
+    public ShipSocketGroup() {
         groupName = null;
         sockets = null;
         target = null;
@@ -152,8 +179,12 @@ public class SocketGroup
 
     /// <summary>Create a new named SocketGroup.</summary>
     /// <param name="name"></param>
-    public SocketGroup(string name) : this() {
+	public ShipSocketGroup(
+		string name, 
+		Flags flags = Flags.CanDelete | Flags.CanRename | Flags.Passive | Flags.Active
+	) : this() {
         groupName = name;
+		this.flags = flags;
     }
 
     /// <summary>
@@ -167,6 +198,31 @@ public class SocketGroup
         sockets = AHArray.Added(sockets, socket);
         return true;
     }
+
+	/// <summary>
+	/// Determines whether this group can add the specified socket.
+	/// </summary>
+	/// <param name="socket">The socket to try and add to the group.</param>
+	/// <returns><c>true</c> if this group can add the specified socket; otherwise, <c>false</c>.</returns>
+	public bool CanAddSocket(ShipSocket socket) {
+		if (socket.Module == null) {
+			return false; // Cannot add an empty socket.
+		}
+
+		// See if the socket group can take the module.
+		ShipModuleClass module = socket.Module;
+		ShipModuleClass.ModuleType modType = module.GetModuleType();
+		if (modType == ShipModuleClass.ModuleType.Passive) {
+			return (flags & Flags.Passive) == Flags.Passive;
+		}
+
+		if (modType == ShipModuleClass.ModuleType.Active) {
+			return (flags & Flags.Active) == Flags.Active;
+		}
+
+		// Dunno what happened, so no.
+		return false;
+	}
 
     /// <summary>
     /// Check to see if a socket is in the group.

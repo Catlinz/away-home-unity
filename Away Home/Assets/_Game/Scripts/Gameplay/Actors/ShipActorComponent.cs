@@ -111,7 +111,7 @@ public class ShipActorComponent : MonoBehaviour {
     // Use this for initialization
     void Start () {
 		movement = GetComponent<ShipMovementComponent>();
-        //InstallModule(test, "TEST");
+        InstallModule(test, "TEST");
 
         // Add the handlers for the computer system.
         computer.onAllocatedCpuLost += HandleCpuLost;

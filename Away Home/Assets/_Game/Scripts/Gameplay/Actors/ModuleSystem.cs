@@ -41,10 +41,10 @@ public class ModuleSystem {
 	public ShipSocket[] sockets;
 
     /// <summary>
-    /// The list of ShipSocket groups for the ship.  Always has at least 
-    /// "passive" and "default" groups.
+	/// The list of <c>ShipSocketGroup</c>s for the ship.  Always has at least 
+    /// "Primary", "Secondary", "Utility" and "Passive" groups.
     /// </summary>
-    public SocketGroup[] groups;
+    public ShipSocketGroup[] groups;
 
     /// <summary>
     /// Creates a new <c>ModuleSystem</c>.  By default, it creates four socket groups: 
@@ -64,11 +64,11 @@ public class ModuleSystem {
     /// </list>
     /// </summary>
 	public ModuleSystem() {
-        groups = new SocketGroup[(int)SocketGroup.Index.Passive + 1];
-        groups[(int)SocketGroup.Index.Primary] = new SocketGroup("Primary");
-        groups[(int)SocketGroup.Index.Secondary] = new SocketGroup("Secondary");
-        groups[(int)SocketGroup.Index.Utility] = new SocketGroup("Utility");
-        groups[(int)SocketGroup.Index.Passive] = new SocketGroup("Passive");
+        groups = new ShipSocketGroup[(int)ShipSocketGroup.Index.Passive + 1];
+        groups[(int)ShipSocketGroup.Index.Primary] = new ShipSocketGroup("Primary", ShipSocketGroup.Flags.Active);
+		groups[(int)ShipSocketGroup.Index.Secondary] = new ShipSocketGroup("Secondary", ShipSocketGroup.Flags.Active);
+		groups[(int)ShipSocketGroup.Index.Utility] = new ShipSocketGroup("Utility", ShipSocketGroup.Flags.Active);
+		groups[(int)ShipSocketGroup.Index.Passive] = new ShipSocketGroup("Passive", ShipSocketGroup.Flags.Passive);
 	}
 
 	/// <summary>
@@ -108,28 +108,73 @@ public class ModuleSystem {
 		}
 	}
 
+	/// <summary>
+	/// Try and add the specified module / socket to the specified group.  If either the module
+	/// or group cannot be found, then it returns a failed result.
+	/// </summary>
+	/// <param name="socketName">The name of the <c>ShipSocket</c> to add to the group.</param>
+	/// <param name="groupName">The <c>ShipSocketGroup</c> to add the socket to.</param>
+	/// <returns>An <c>OperationResult</c> that indicates whether or not the socket was successfully added.</returns>
+	public OperationResult AddSocketToGroup(string socketName, string groupName) {
+		ShipSocket toAdd = GetSocket(socketName);
+		ShipSocketGroup addTo = GetSocketGroup(groupName);
+
+		if (toAdd == null) {
+			return new OperationResult(OperationResult.Status.FAIL, "Cannot find module " + socketName + " to add to group " + groupName + ".");
+		}
+		if (addTo == null) {
+			return new OperationResult(OperationResult.Status.FAIL, "Cannot find group " + groupName + " to add the module to.");
+		}
+
+		// Make sure to remove the socket from any other socket groups first.
+		ShipSocketGroup prevGroup = GetSocketGroupFor(socketName);
+		if (prevGroup != null) {
+			prevGroup.Remove(toAdd);
+		}
+
+		// Then add it to the new socket group.
+		addTo.Add(toAdd);
+
+		return OperationResult.OK;
+	}
+
     /// <summary>
-    /// Create a new <c>SocketGroup</c> and add it to the list.
+	/// Create a new <c>ShipSocketGroup</c> and add it to the list.
     /// </summary>
-    /// <param name="newName">The name of the new <c>SocketGroup</c> to create.</param>
+	/// <param name="newName">The name of the new <c>ShipSocketGroup</c> to create.</param>
     /// <returns>The newly created group, or null if a group with the same name already exists.</returns>
-    public SocketGroup CreateGroup(string newName) {
+    public ShipSocketGroup CreateSocketGroup(string newName) {
         if (HasGroup(newName)) { return null; }
 
-        SocketGroup newGroup = new SocketGroup(newName);
+        ShipSocketGroup newGroup = new ShipSocketGroup(newName);
         groups = AHArray.Added(groups, newGroup);
 
         return newGroup;
     }
 
-    /// TODO: DELETE SOCKET GROUP
+	/// <summary>
+	/// Deletes the specified <c>ShipSocketGroup</c> from the list.
+	/// </summary>
+	/// <param name="groupName">The name of the <c>ShipSocketGroup</c> to remove.</param>
+	public void DeleteSocketGroup(string groupName) {
+		int index = -1;
+		for (int i = 0; i < groups.Length; ++i) {
+			if (groups[i].groupName == groupName) {
+				index = i;
+				break;
+			}
+		}
+		if (index != -1) {
+			groups = AHArray.Removed(groups, index);
+		}
+	}
 
     /// <summary>
-    /// Get a <c>SocketGroup</c> by name.
+	/// Get a <c>ShipSocketGroup</c> by name.
     /// </summary>
-    /// <param name="groupName">The name of the <c>SocketGroup</c> to get.</param>
-    /// <returns>The <c>SocketGroup</c> or null if it wasn't found.</returns>
-    public SocketGroup GetGroup(string groupName) {
+	/// <param name="groupName">The name of the <c>ShipSocketGroup</c> to get.</param>
+	/// <returns>The <c>ShipSocketGroup</c> or null if it wasn't found.</returns>
+    public ShipSocketGroup GetSocketGroup(string groupName) {
         int numGroups = groups.Length;
         for (int i = 0; i < numGroups; ++i) {
             if (groups[i].groupName == groupName) {
@@ -138,6 +183,20 @@ public class ModuleSystem {
         }
         return null;
     }
+
+	/// <summary>
+	/// Get the <c>ShipSocketGroup</c> (if any) that a <c>Socket</c> belongs to.
+	/// </summary>
+	/// <param name="socketName">The name of the <c>ShipSocket</c> to get the <c>ShipSocketGroup</c> for.</param>
+	/// <returns>The group the socket belongs to (or null if it's not in a group)</returns>
+	public ShipSocketGroup GetSocketGroupFor(string socketName) {
+		for (int i = 0; i < groups.Length; ++i) {
+			if (groups[i].Contains(socketName)) {
+				return groups[i];
+			}
+		}
+		return null;
+	}
 
 	/// <summary>
 	/// Get the details about a ship socket by name.
@@ -168,9 +227,9 @@ public class ModuleSystem {
     }
 
     /// <summary>
-    /// Check to see if a <c>SocketGroup</c> with the provided name exists.
+	/// Check to see if a <c>ShipSocketGroup</c> with the provided name exists.
     /// </summary>
-    /// <param name="groupName">The name of the <c>SocketGroup</c> to search for.</param>
+	/// <param name="groupName">The name of the <c>ShipSocketGroup</c> to search for.</param>
     /// <returns>True if the the group exists already.</returns>
     public bool HasGroup(string groupName) {
         int numGroups = groups.Length;
@@ -194,7 +253,7 @@ public class ModuleSystem {
 
         // If the module is a passive module, then handle it.
 		if (module.GetModuleType() == ShipModuleClass.ModuleType.Passive) {
-            groups[SocketGroup.PassiveIndex].Add(socket);
+			groups[(int)ShipSocketGroup.Index.Passive].Add(socket);
 		}
         else {
             // The module is an active module, so add it to the appriopriate activation group.
