@@ -9,9 +9,13 @@ public enum ModuleResult {
 	AlreadyEnabled,
 	AlreadyDisabled,
 
+    InCooldownState,
+
 	InvalidAsset,
 	InvalidShip,
 
 	InsufficientCpu,
-	InsufficientPower
+	InsufficientPower,
+
+    NotImplemented
 }

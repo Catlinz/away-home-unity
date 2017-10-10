@@ -106,14 +106,14 @@ public class ActiveModule : ShipModuleClass {
 	}
 
 	/// <summary>Makes sure the module is deactivated before disabling.</summary>
-	/// <seealso cref="ShipModuleClass.#DisableModule"/>
+	/// <seealso cref="ShipModuleClass.DisableModule"/>
 	public override ModuleResult DisableModule() {
 		DeactivateModule();
 		return base.DisableModule();
 	}
 
 	/// <summary>Allocates the idle CPU and reserves the idle energy required.</summary>
-	/// <seealso cref="ShipModuleClass.#EnableModule"/>
+	/// <seealso cref="ShipModuleClass.EnableModule"/>
 	public override ModuleResult EnableModule() {
 		return base.EnableModule();
 	}
@@ -126,7 +126,7 @@ public class ActiveModule : ShipModuleClass {
 	}
 
 	/// <summary>Initializes the Module component from an asset for the module.</summary>
-	/// <seealso cref="ShipModuleClass.#InitFromAssetInSocket"/>
+	/// <seealso cref="ShipModuleClass.InitFromAssetInSocket"/>
 	public override ModuleResult InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocket socket) {
 		return base.InitFromAssetInSocket(asset, socket);
 	}
