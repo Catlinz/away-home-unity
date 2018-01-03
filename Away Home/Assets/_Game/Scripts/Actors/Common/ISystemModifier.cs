@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
 
 /// <summary>
 /// Interface for classes to implement to be able to modify a System component on 
@@ -24,6 +24,30 @@ public interface ISystemModifier
     /// TODO Add method to draw the UI part of the modifier?
 }
 
+[System.Serializable]
+public struct SerializableSystemModifier
+{
+    public string type;
+    public string name;
+    public float delta;
+    public float multiplier;
+
+    public static SerializableSystemModifier From(ISystemModifier modifier) {
+        string modType = modifier.GetType().ToString();
+        return new SerializableSystemModifier() {
+            type = modType,
+            name = modifier.Name,
+            delta = modifier.Delta,
+            multiplier = modifier.Multiplier
+        };
+    }
+
+    public ISystemModifier Get() {
+        System.Type modType = System.Type.GetType(type);
+        return (ISystemModifier)System.Activator.CreateInstance(modType, new System.Object[] { delta, multiplier, name });
+    }
+}
+
 
 /// <summary>
 /// A list that holds a number of ISystemModifiers and has methods for getting total 
@@ -32,15 +56,16 @@ public interface ISystemModifier
 [System.Serializable]
 public class SystemModifierList
 {
-    [SerializeField]
-    private ISystemModifier[] _modifiers;
+    private List<ISystemModifier> _modifiers;
 
     // Cached values based on the list of modifiers.
     private float _cachedMultiplier;
     private float _cachedDelta;
 
+    public SerializableSystemModifier[] serializedList;
+
     public SystemModifierList() {
-        _modifiers = null;
+        _modifiers = new List<ISystemModifier>();
         _cachedMultiplier = float.NaN;
         _cachedDelta = float.NaN;
     }
@@ -51,7 +76,7 @@ public class SystemModifierList
     public void Add(ISystemModifier modifier) {
         _cachedMultiplier = float.NaN;
         _cachedDelta = float.NaN;
-        _modifiers = AHArray.Added(_modifiers, modifier);
+        _modifiers.Add(modifier);
     }
 
     /// <summary>
@@ -77,23 +102,46 @@ public class SystemModifierList
         return _cachedMultiplier;
     }
 
+    public void OnAfterDeserialize() {
+        // Unity has just written new data into the seralizedList field.
+        _modifiers.Clear();
+        for (int i = 0; i < serializedList.Length; ++i) {
+            System.Type modType = System.Type.GetType(serializedList[i].type);
+            _modifiers.Add(serializedList[i].Get());
+        }
+        serializedList = null;
+    }
+
+    // Used to make the class serializeable.
+    public void OnBeforeSerialize() {
+        // Unity is about to read the serializedList's field's contents.
+        serializedList = new SerializableSystemModifier[_modifiers.Count];
+        int index = 0;
+        foreach (ISystemModifier mod in _modifiers) {
+            serializedList[index] = SerializableSystemModifier.From(_modifiers[index]);
+            ++index;
+        }
+    }
+
     /// <summary>
     /// Remove an existing modifier from the list.  Uses the 
     /// <c>Equals()</c> method of the ISystemModifier.
     /// </summary>
     /// <returns>True if a modifier was found and removed.</returns>
     bool Remove(ISystemModifier modifier) {
-        if (_modifiers == null) { return false; }
+        if (_modifiers.Count == 0) { return false; }
 
-        int numMod = _modifiers.Length;
-        for (int i = 0; i < numMod; ++i) {
-            if (_modifiers[i].Equals(modifier)) {
-                _cachedDelta = float.NaN;
-                _cachedMultiplier = float.NaN;
-                _modifiers = AHArray.Removed(_modifiers, i);
-                return true;
-            }
+        int index = 0;
+        foreach(ISystemModifier mod in _modifiers) {
+            if (mod.Equals(modifier)) { break; }
+            ++index;
         }
+
+        if (index < _modifiers.Count) {
+            _modifiers.RemoveAt(index);
+            return true;
+        }
+
         return false;
     }
 
@@ -105,10 +153,9 @@ public class SystemModifierList
         float sumMulti = 0f;
         float sumDelta = 0f;
 
-        int numMod = (_modifiers != null) ? _modifiers.Length : 0;
-        for (int i = 0; i < numMod; ++i) {
-            sumMulti += _modifiers[i].Multiplier;
-            sumDelta += _modifiers[i].Delta;
+        foreach (ISystemModifier mod in _modifiers) {
+            sumMulti += mod.Multiplier;
+            sumDelta += mod.Delta;
         }
 
         _cachedMultiplier = sumMulti;
