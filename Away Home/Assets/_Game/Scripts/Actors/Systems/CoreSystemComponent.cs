@@ -10,10 +10,26 @@ public class CoreSystemComponent : MonoBehaviour, ISystem {
 	/// <summary>Fired when allocated computer resources are lost or gained.</summary>
     public event ComputerResourcesChanged onComputerResourcesChanged;
 
-	#endregion
+    #endregion
 
-	#region  PUBLIC METHODS
-	
+    #region PRIVATE_FIELDS
+    private SystemModifierList _modifiers;
+    #endregion
+
+    #region  PUBLIC METHODS
+    public void AddModifier(SystemModifier modifier) {
+        //TODO Fill this in
+        _modifiers.Add(modifier);
+    }
+
+    public void RemoveModifier(SystemModifier modifier) {
+        // TODO Fill this in.
+        _modifiers.Remove(modifier);
+    }
+
+    public void ReplaceModifier(SystemModifier modifier) {
+        _modifiers.Replace(modifier);
+    }
 	#endregion
 
 	// Use this for initialization
