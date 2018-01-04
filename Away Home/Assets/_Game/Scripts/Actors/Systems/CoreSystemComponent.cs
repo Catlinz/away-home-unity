@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CoreSystemComponent : MonoBehaviour {
+public class CoreSystemComponent : MonoBehaviour, ISystem {
 
 	#region DELEGATES
     /// <param name="change">If less than 0, then indicates allocated resource loss, otherwise indicates idle resource gain.</param>
@@ -10,6 +10,10 @@ public class CoreSystemComponent : MonoBehaviour {
 	/// <summary>Fired when allocated computer resources are lost or gained.</summary>
     public event ComputerResourcesChanged onComputerResourcesChanged;
 
+	#endregion
+
+	#region  PUBLIC METHODS
+	
 	#endregion
 
 	// Use this for initialization
