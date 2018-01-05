@@ -5,10 +5,12 @@ using UnityEngine;
 /// <summary>
 /// The base class for all Ship Modules to inherit from.
 /// </summary>
-public class ShipModuleClass : MonoBehaviour {
+public class ActorModuleClass : MonoBehaviour {
 
-	/// <summary>A list of flags that can describe a type of module.</summary>
-	[System.Flags] public enum TypeFlags { None = 0, Passive = 0x1, Active = 0x2, Tracking = 0x4, Trigger = 0x8 };
+    #region PUBLIC_FIELDS
+    /// <summary>The type of hardpoint socket that is required to install the module.</summary>
+    public HPSocket socket;
+    #endregion
 
     #region PUBLIC_PROPS
     /// <summary>Get the asset that was used to construct the Module.</summary>
@@ -16,12 +18,12 @@ public class ShipModuleClass : MonoBehaviour {
         get { return moduleAsset; }
     }
 
-    /// <summary>The amount of CPU resources consumed by the Module when enabled.</summary>
-    public int IdleCpuUsage {
-        get { return moduleAsset.idleCpuUsage; }
+    /// <summary>The amount of computer resources consumed by the Module when enabled.</summary>
+    public int IdleComputerResources {
+        get { return moduleAsset.idleComputerResources; }
     }
 
-    /// <summary>The amount of power consumed by the Module when enabled.</summary>
+    /// <summary>The amount of energy consumed by the Module when enabled.</summary>
     public int IdleEnergyDrain {
         get { return moduleAsset.idleEnergyDrain; }
     }
@@ -39,8 +41,8 @@ public class ShipModuleClass : MonoBehaviour {
     /// <summary>The asset that was used to construct the Module from.</summary>
     protected InstallableModuleAsset moduleAsset;
 
-    /// <summary>A reference to the ship the module is enabled on.</summary>
-    protected ShipActorComponent ship;
+    /// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
+    protected CoreSystemComponent system;
     #endregion
 
     /// <summary>
@@ -60,7 +62,7 @@ public class ShipModuleClass : MonoBehaviour {
 	/// <description><c>AlreadyDisabled</c> if the module is already disabled.</description>
 	/// </item>
 	/// <item>
-	/// <description><c>InvalidShip</c> if the ship reference is null already.</description>
+	/// <description><c>InvalidSystem</c> if the system reference is null already.</description>
 	/// </item>
 	/// </list>
 	/// </returns>
@@ -68,14 +70,14 @@ public class ShipModuleClass : MonoBehaviour {
 		if (!isEnabled) { return ModuleResult.AlreadyDisabled; }
 
 		isEnabled = false;
-		if (ship != null) {
-			ship.computer.DeallocateCpu(IdleCpuUsage);
-			ship.power.Free(IdleEnergyDrain);
-			ship = null;
+		if (system != null) {
+            system.computer.DeallocateCpu(IdleComputerResources);
+            system.power.Free(IdleEnergyDrain);
+            system = null;
 			return ModuleResult.Success;
 		}
 		else {
-			return ModuleResult.InvalidShip;
+			return ModuleResult.InvalidSystem;
 		}
 	}
 
@@ -100,32 +102,24 @@ public class ShipModuleClass : MonoBehaviour {
 	public virtual ModuleResult EnableModule() {
         if (isEnabled) { return ModuleResult.AlreadyEnabled; }
 
-		ship = gameObject.GetComponentInParent<ShipActorComponent>();
-		if (!ship) { return ModuleResult.InvalidShip; }
+		system = gameObject.GetComponentInParent<CoreSystemComponent>();
+		if (!system) { return ModuleResult.InvalidSystem; }
 
-		if (ship.computer.AllocateCpu(IdleCpuUsage)) {
-			if (ship.power.Reserve(IdleEnergyDrain)) {
+		if (system.computer.AllocateCpu(IdleComputerResources)) {
+			if (system.power.Reserve(IdleEnergyDrain)) {
 				isEnabled = true;
 				return ModuleResult.Success;
 			}
 			else { // Not enough power to enable module.
-				ship.computer.DeallocateCpu(IdleCpuUsage);
-				ship = null;
+                system.computer.DeallocateCpu(IdleComputerResources);
+                system = null;
 				return ModuleResult.InsufficientPower;
 			}
 		}
 		else { // Not enough CPU to enable module.
-			ship = null;
+            system = null;
 			return ModuleResult.InsufficientCpu;
 		}
-	}
-
-	/// <summary>
-	/// Gets the details about the type of the module.
-	/// </summary>
-	/// <returns>The module type flags.</returns>
-	public virtual TypeFlags GetTypeFlags() { 
-		return TypeFlags.None;
 	}
 
     /// <summary>
@@ -139,11 +133,11 @@ public class ShipModuleClass : MonoBehaviour {
 
 	/// <summary>Initializes the Module component from an asset for the module.</summary>
 	/// <param name="asset">The module asset to initialize from.</param>
-	/// <param name="socket">The ShipSocket that the module is being installed on.</param>
+	/// <param name="hardpoint">The HardPoint that the module is being installed on.</param>
 	/// <returns>ModuleResult.Success</returns>
-	public virtual ModuleResult InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocket socket) {
+	public virtual ModuleResult InitFromAssetInHardPoint(InstallableModuleAsset asset, HardPoint hardpoint) {
 		moduleAsset = asset;
-        socket.SetModule(this);
+        hardpoint.SetModule(this);
 		return ModuleResult.Success;
 	}
 

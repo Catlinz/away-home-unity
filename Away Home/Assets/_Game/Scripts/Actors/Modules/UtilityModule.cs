@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ActiveModule : ShipModuleClass {
+public class UtilityModule : ActorModuleClass {
 
 	#region PROTECTED_VARS
 	/// <summary>Whether or not the module is currently active.</summary>

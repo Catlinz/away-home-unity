@@ -10,9 +10,9 @@ public class CoreSystemComponent : MonoBehaviour, ISystem {
 
     #region PUBLIC_FIELDS
     ///<summary>The power system that represents the reactor.</summary>
-    PowerSystem power;
+    public PowerSystem power;
     ///<summary>The computer system</summary>
-    ComputerSystem computer;
+    public ComputerSystem computer;
     #endregion
 
     #region  PUBLIC METHODS

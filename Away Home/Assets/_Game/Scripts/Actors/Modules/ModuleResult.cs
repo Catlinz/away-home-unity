@@ -12,7 +12,7 @@ public enum ModuleResult {
     InCooldownState,
 
 	InvalidAsset,
-	InvalidShip,
+	InvalidSystem,
 
 	InsufficientCpu,
 	InsufficientPower,
