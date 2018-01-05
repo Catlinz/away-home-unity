@@ -9,28 +9,15 @@
 public class PowerSystem {
 
     /// <summary>
-    /// Delegate to listen for when reserved energy is lost.
+    /// Delegate to listen for when reserved energy is lost, or free energy is gained.
     /// </summary>
-    /// <param name="energyLost">The amount of reserved energy that was lost.</param>
-    public delegate void ReservedEnergyLost(float energyLost);
+    /// <param name="energyLost">The deficit of energy (if negative) or amount of free energy (if positive).</param>
+    public delegate void EnergyChanged(float energy);
     /// <summary>Event generated when reserved energy is lost.</summary>
-    public event ReservedEnergyLost onReservedEnergyLost;
+    public event EnergyChanged onEnergyChanged;
 
-    /// <summary>
-    /// Delegate to listen for when free energy is gained.
-    /// </summary>
-    /// <param name="freeEnergy">The new level of free energy.</param>
-    public delegate void UsableEnergyGained(float freeEnergy);
-    /// <summary>Event generated when free energy is gained.</summary>
-    public event UsableEnergyGained onUsableEnergyGained;
-
-    /// <summary>
-    /// Delegate to listen for when the power system receives damage.
-    /// </summary>
-    /// <param name="percentDamage">The percentage of damage the system has currently [0-1].</param>
-    public delegate void SystemDamaged(float percentDamage);
     /// <summary>Event generated when the system takes damage.</summary>
-    public event SystemDamaged onSystemDamaged;
+    public event SystemDamaged onDamaged;
 
     /// <summary>The max energy the system can store.</summary>
     public ModifiableFloat energyCapacity;
@@ -115,7 +102,7 @@ public class PowerSystem {
         float capacity = EnergyCapacity;
         if (currentEnergy < capacity) {
             currentEnergy = Mathf.Min(currentEnergy + energy, capacity);
-            if (onUsableEnergyGained != null) { onUsableEnergyGained(FreeEnergy); }
+            if (onEnergyChanged != null) { onEnergyChanged(FreeEnergy); }
         }
         
     }
@@ -137,7 +124,7 @@ public class PowerSystem {
 
             // If we consumed into the reserves, call delegates.
             if (currentEnergy < reservedEnergy) {
-                if (onReservedEnergyLost != null) { onReservedEnergyLost((float)reservedEnergy - currentEnergy); }
+                if (onEnergyChanged != null) { onEnergyChanged((float)currentEnergy - reservedEnergy); }
             }
             return true;
         }
@@ -152,7 +139,7 @@ public class PowerSystem {
     public void Free(int energy) {
         reservedEnergy -= energy;
         if (reservedEnergy < 0) { reservedEnergy = 0; }
-        if (onUsableEnergyGained != null) { onUsableEnergyGained(FreeEnergy); }
+        if (onEnergyChanged != null) { onEnergyChanged(FreeEnergy); }
     }
 
 	/// <summary>
@@ -180,8 +167,8 @@ public class PowerSystem {
             // Check for and take care of any energy loss due to loss of capacity.
             CheckCapacity();
 
-            if (onSystemDamaged != null) {
-                onSystemDamaged(damage);
+            if (onDamaged != null) {
+                onDamaged(damage);
             }            
         }
     }
@@ -265,8 +252,8 @@ public class PowerSystem {
             CheckCapacity();
 
             // Broadcast that the system took damage to any listeners.
-            if (onSystemDamaged != null) {
-                onSystemDamaged(damage);
+            if (onDamaged != null) {
+                onDamaged(damage);
             }
         }
     }

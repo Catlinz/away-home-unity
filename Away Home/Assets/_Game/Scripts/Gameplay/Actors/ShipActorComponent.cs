@@ -105,7 +105,7 @@ public class ShipActorComponent : MonoBehaviour {
         // Remove handlers from the power system.
         power.onReservedEnergyLost -= HandleEnergyLost;
         power.onUsableEnergyGained -= HandleEnergyGained;
-        power.onSystemDamaged -= HandlePowerDamaged;
+        power.onDamaged -= HandlePowerDamaged;
     }
 
     // Use this for initialization
@@ -121,7 +121,7 @@ public class ShipActorComponent : MonoBehaviour {
         // Add the handlers for the power system.
         power.onReservedEnergyLost += HandleEnergyLost;
         power.onUsableEnergyGained += HandleEnergyGained;
-        power.onSystemDamaged += HandlePowerDamaged;
+        power.onDamaged += HandlePowerDamaged;
 	}
 	
 	// Update is called once per frame

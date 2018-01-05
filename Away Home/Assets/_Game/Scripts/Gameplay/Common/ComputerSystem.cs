@@ -9,33 +9,20 @@ using UnityEngine;
 [System.Serializable]
 public class ComputerSystem {
     /// <summary>
-    /// Delegate to listen for when allocated CPU resources are lost..
+    /// Delegate to listen for when allocated Computer resources are lost or Idle computer resources are gained.
     /// </summary>
-    /// <param name="cpuLost">The amount of allocated CPU resources that were lost.</param>
-    public delegate void AllocatedCpuLost(float cpuLost);
-    /// <summary>Event generated when allocated CPU resources are lost.</summary>
-    public event AllocatedCpuLost onAllocatedCpuLost;
+    /// <param name="cpuLost">The resource deficit (if negative) or free resources (if positive).</param>
+    public delegate void ResourcesChanged(float cpuLost);
+    /// <summary>Event generated when allocated Computer resources are lost or idle Computer resources are gained.</summary>
+    public event ResourcesChanged onResourcesChanged;
 
-    /// <summary>
-    /// Delegate to listen for when CPU resources become available.
-    /// </summary>
-    /// <param name="freeCpu">The new level of free energy.</param>
-    public delegate void IdleCpuGained(float idleCpu);
-    /// <summary>Event generated when free energy is gained.</summary>
-	public event IdleCpuGained onIdleCpuGained;
-
-    /// <summary>
-    /// Delegate to listen for when the computer system receives damage.
-    /// </summary>
-    /// <param name="percentDamage">The percentage of damage the system has currently [0-1].</param>
-    public delegate void SystemDamaged(float percentDamage);
     /// <summary>Event generated when the system takes damage.</summary>
-    public event SystemDamaged onSystemDamaged;
+    public event SystemDamaged onDamaged;
 
     /// <summary>The amount of CPU resources given by the system.</summary>
-    public ModifiableFloat totalCpu;
+    public ModifiableFloat totalResources;
     /// <summary>The current amount of CPU resources being used.</summary>
-    public int allocatedCpu;
+    public int allocatedResources;
 
     /// <summary>The damage to the computer system.  More damage = less resources.</summary>
     public float damage;
@@ -44,8 +31,8 @@ public class ComputerSystem {
     public float overclock;
 
     /// <summary>The amount of free CPU resources available.</summary>
-    public float IdleCpu {
-		get { return totalCpu - (float)allocatedCpu; }
+    public float IdleResources {
+		get { return totalResources - (float)allocatedResources; }
     }
 
     /// <summary>Whether the computer system is currently overclocked or not.</summary>
@@ -54,12 +41,12 @@ public class ComputerSystem {
     }
 
     ///<summary>The total CPU available with overclock and damage modifiers applied.</summary>
-    public float TotalCpu {
+    public float TotalResources {
         get {
             if (damage > 0.0f) {
-                return totalCpu * overclock * (1.0f - (damage * 0.5f));
+                return totalResources * overclock * (1.0f - (damage * 0.5f));
             }
-            else { return totalCpu * overclock; }
+            else { return totalResources * overclock; }
         }
     }
 
@@ -68,16 +55,16 @@ public class ComputerSystem {
 
     /// <summary>Default constructor.</summary>
     public ComputerSystem() {
-        totalCpu = 0;
-		allocatedCpu = 0;
+        totalResources = 0;
+		allocatedResources = 0;
         damage = 0;
         overclock = 1.0f;
     }
 
     /// <summary>Copy constructor.</summary>
     public ComputerSystem(ComputerSystem src) {
-        totalCpu = src.totalCpu;
-		allocatedCpu = src.allocatedCpu;
+        totalResources = src.totalResources;
+		allocatedResources = src.allocatedResources;
         damage = src.damage;
         overclock = src.overclock;
     }
@@ -89,8 +76,8 @@ public class ComputerSystem {
     /// <param name="cpu">The amount of CPU resources to allocate.</param>
     /// <returns>True if there were enough resources to allocate, false otherwise.</returns>
     public bool AllocateCpu(int cpu) {
-        if (allocatedCpu + cpu <= TotalCpu) {
-			allocatedCpu += cpu;
+        if (allocatedResources + cpu <= TotalResources) {
+			allocatedResources += cpu;
             return true;
         }
         else { return false; }
@@ -102,8 +89,8 @@ public class ComputerSystem {
     /// </summary>
     /// <param name="cpu">The amount of CPU resources to free.</param>
     public void DeallocateCpu(int cpu) {
-        allocatedCpu = Mathf.Max(allocatedCpu - cpu, 0);
-        if (onIdleCpuGained != null) { onIdleCpuGained(IdleCpu); }
+        allocatedResources = Mathf.Max(allocatedResources - cpu, 0);
+        if (onResourcesChanged != null) { onResourcesChanged(IdleResources); }
     }
 
     /// <summary>
@@ -118,8 +105,8 @@ public class ComputerSystem {
             // Check to see if we lost any allocated resources to do total CPU change.
             CheckTotalCpu();
 
-            if (onSystemDamaged != null) {
-                onSystemDamaged(damage);
+            if (onDamaged != null) {
+                onDamaged(damage);
             }
         }
     }
@@ -143,8 +130,8 @@ public class ComputerSystem {
     /// <param name="added">The value to set the flat modifier to.</param>
     /// <param name="modifier">The value to set the multiplicative modifier to.</param>
     public void SetTotalCpu(float added = 0.0f, float modifier = 1.0f) {
-        totalCpu.added = added;
-        totalCpu.modifier = modifier;
+        totalResources.added = added;
+        totalResources.modifier = modifier;
 
         // Check to see if we lost any allocated resources to do total CPU change.
         CheckTotalCpu();
@@ -182,8 +169,8 @@ public class ComputerSystem {
             // Check to see if we lost any allocated resources to do total CPU change.
             CheckTotalCpu();
             
-            if (onSystemDamaged != null) {
-                onSystemDamaged(damage);
+            if (onDamaged != null) {
+                onDamaged(damage);
             }
         }
     }
@@ -195,8 +182,8 @@ public class ComputerSystem {
     /// <param name="addedDelta">The amount to change the flat modifier by.</param>
     /// <param name="modifierDelta">The amount to change the multiplicative modifier by.</param>
     public void UpdateTotalCpu(float addedDelta = 0.0f, float modifierDelta = 0.0f) {
-        totalCpu.added += addedDelta;
-        totalCpu.modifier += modifierDelta;
+        totalResources.added += addedDelta;
+        totalResources.modifier += modifierDelta;
 
         // Check to see if we lost any allocated resources to do total CPU change.
         CheckTotalCpu();
@@ -207,10 +194,10 @@ public class ComputerSystem {
     /// If so, then we broadcast an event.
     /// </summary>
     private void CheckTotalCpu() {
-        float total = TotalCpu;
-        if (total < allocatedCpu) {
-            if (onAllocatedCpuLost != null) {
-                onAllocatedCpuLost(allocatedCpu - total);
+        float total = TotalResources;
+        if (total < allocatedResources) {
+            if (onResourcesChanged != null) {
+                onResourcesChanged(total - allocatedResources);
             }
         }
     }

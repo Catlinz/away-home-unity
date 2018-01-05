@@ -79,7 +79,7 @@ public class ModuleSystem {
 	/// <param name="ship">The ship that the ModuleSystem is attached to.</param>
 	/// <returns>True if the ship has enough resources to enable the module.</returns>
 	public bool CanEnable(ShipModuleClass module, ShipActorComponent ship) {
-		return (ship.computer.IdleCpu >= module.IdleCpuUsage) && (ship.power.FreeEnergy >= module.IdleEnergyDrain);
+		return (ship.computer.IdleResources >= module.IdleCpuUsage) && (ship.power.FreeEnergy >= module.IdleEnergyDrain);
 	}
 
 	/// <summary>

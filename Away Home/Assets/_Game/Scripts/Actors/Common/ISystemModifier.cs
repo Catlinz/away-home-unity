@@ -4,10 +4,12 @@ public enum ModifiableStat
 {
     None = 0,
 
-    PowerTotal,
-    PowerRecharge,
+    EnergyCapacity,
+    EnergyRecharge,
 
-    ComputerResources
+    ComputerResources,
+
+    OverclockDamage
 }
 
 /// <summary>
