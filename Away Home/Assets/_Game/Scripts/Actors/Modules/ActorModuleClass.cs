@@ -8,25 +8,17 @@ using UnityEngine;
 public class ActorModuleClass : MonoBehaviour {
 
     #region PUBLIC_FIELDS
+	/// <summary>The amount of computer resources consumed by the Module when enabled.</summary>
+	public int idleComputerResources;
+
+	/// <summary>The amount of energy consumed by the Module when enabled.</summary>
+	public int idleEnergyDrain;
+
     /// <summary>The type of hardpoint socket that is required to install the module.</summary>
     public HPSocket socket;
     #endregion
 
     #region PUBLIC_PROPS
-    /// <summary>Get the asset that was used to construct the Module.</summary>
-    public InstallableModuleAsset Asset {
-        get { return moduleAsset; }
-    }
-
-    /// <summary>The amount of computer resources consumed by the Module when enabled.</summary>
-    public int IdleComputerResources {
-        get { return moduleAsset.idleComputerResources; }
-    }
-
-    /// <summary>The amount of energy consumed by the Module when enabled.</summary>
-    public int IdleEnergyDrain {
-        get { return moduleAsset.idleEnergyDrain; }
-    }
 
     /// <summary>Whether or not the Module is currently enabled.</summary>
     public bool IsEnabled {
@@ -38,21 +30,21 @@ public class ActorModuleClass : MonoBehaviour {
     /// <summary>Whether or not the module is currently enabled.</summary>
     protected bool isEnabled;
 
-    /// <summary>The asset that was used to construct the Module from.</summary>
-    protected InstallableModuleAsset moduleAsset;
-
     /// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
     protected CoreSystemComponent system;
     #endregion
 
-    /// <summary>
-    /// Test whether or not the module can target the provided target.
-    /// </summary>
-    /// <param name="newTarget">The targetable object to test.</param>
-    /// <returns>True if it is a valid target for the module.</returns>
-    public virtual bool CanTarget(ITargetable newTarget) {
-        return false;
-    }
+	/// <summary>
+	/// Instantiates an instance of a module prefab and installs it into a specified hardpoint on a 
+	/// specified parent GameObject.  The instance of the module component is returned.
+	/// </summary>
+	public static ActorModuleClass Instantiate(GameObject prefab, HardPoint hardpoint, GameObject parent) {
+		GameObject go = GameObject.Instantiate(prefab, parent.transform);
+		ActorModuleClass mod = go.GetComponent<ActorModuleClass>();
+		mod.Instantiate(hardpoint.position, hardpoint.rotation);
+
+		return mod;
+	}
 
     /// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
 	/// <returns>
@@ -71,8 +63,8 @@ public class ActorModuleClass : MonoBehaviour {
 
 		isEnabled = false;
 		if (system != null) {
-            system.computer.DeallocateCpu(IdleComputerResources);
-            system.power.Free(IdleEnergyDrain);
+            system.computer.DeallocateCpu(idleComputerResources);
+            system.power.Free(idleEnergyDrain);
             system = null;
 			return ModuleResult.Success;
 		}
@@ -89,7 +81,7 @@ public class ActorModuleClass : MonoBehaviour {
 	/// <description><c>AlreadyEnabled</c> if the module is already enabled.</description>
 	/// </item>
 	/// <item>
-	/// <description><c>InvalidShip</c> if the ship reference is null.</description>
+	/// <description><c>InvalidSystem</c> if the system reference is null.</description>
 	/// </item>
 	/// <item>
 	/// <description><c>InsufficientPower</c> if there is not enough power to enable the module.</description>
@@ -105,13 +97,13 @@ public class ActorModuleClass : MonoBehaviour {
 		system = gameObject.GetComponentInParent<CoreSystemComponent>();
 		if (!system) { return ModuleResult.InvalidSystem; }
 
-		if (system.computer.AllocateCpu(IdleComputerResources)) {
-			if (system.power.Reserve(IdleEnergyDrain)) {
+		if (system.computer.AllocateCpu(idleComputerResources)) {
+			if (system.power.Reserve(idleEnergyDrain)) {
 				isEnabled = true;
 				return ModuleResult.Success;
 			}
 			else { // Not enough power to enable module.
-                system.computer.DeallocateCpu(IdleComputerResources);
+                system.computer.DeallocateCpu(idleComputerResources);
                 system = null;
 				return ModuleResult.InsufficientPower;
 			}
@@ -122,30 +114,12 @@ public class ActorModuleClass : MonoBehaviour {
 		}
 	}
 
-    /// <summary>
-    /// Test to see if the module is currently targeting the provided targetable object.
-    /// </summary>
-    /// <param name="target">The targetable object to test.</param>
-    /// <returns>True if the module is targeting the provided target.</returns>
-    public virtual bool HasTarget(ITargetable testTarget) {
-        return false;
-    }
-
-	/// <summary>Initializes the Module component from an asset for the module.</summary>
-	/// <param name="asset">The module asset to initialize from.</param>
-	/// <param name="hardpoint">The HardPoint that the module is being installed on.</param>
-	/// <returns>ModuleResult.Success</returns>
-	public virtual ModuleResult InitFromAssetInHardPoint(InstallableModuleAsset asset, HardPoint hardpoint) {
-		moduleAsset = asset;
-        hardpoint.SetModule(this);
-		return ModuleResult.Success;
+	/// <summary>
+	/// Virtual Instantiate method to setup placing the module on the parent 
+	/// actor, be it a ship or other vehicle.
+	/// </summary>
+	public virtual void Instantiate(Vector3 relPosition, Quaternion relRotation) {
+		gameObject.transform.localPosition = relPosition;
+		gameObject.transform.localRotation = relRotation;
 	}
-
-    /// <summary>
-    /// Sets the current target for the module, if it can have a target.
-    /// </summary>
-    /// <param name="newTarget">The new targetable object to target.</param>
-    public virtual void SetTarget(ITargetable newTarget) {
-        return;
-    }
 }

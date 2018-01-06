@@ -116,7 +116,8 @@ public class HardPoint
     /// <param name="target">The targetable object to test.</param>
     /// <returns>True if there is a module installed that can target the target.</returns>
     public bool CanTarget(ITargetable target) {
-        return (module != null && module.CanTarget(target));
+        TargetedModule tmod = module as TargetedModule;
+        return (tmod != null && tmod.CanTarget(target));
     }
 
     /// <summary>
@@ -128,12 +129,21 @@ public class HardPoint
     }
 
     /// <summary>
+    /// Get the current target of the installed module, if any.
+    /// </summary>
+    public ITargetable GetTarget() {
+        TargetedModule tMod = module as TargetedModule;
+        return (tMod != null) ? tMod.getTarget() : null;
+    }
+
+    /// <summary>
     /// Check if the HardPoint has a module installed that is currently targeting target.
     /// </summary>
     /// <param name="target">The targetable object to test.</param>
     /// <returns>True if there is a module installed that is currently targeting target.</returns>
     public bool HasTarget(ITargetable target) {
-        return (module != null && module.HasTarget(target));
+        TargetedModule tMod = module as TargetedModule;
+        return (tMod != null && tMod.HasTarget(target));
     }
 
     /// <summary>
@@ -148,8 +158,9 @@ public class HardPoint
     /// </summary>
     /// <param name="target">The targetable object for the module to target.</param>
     public void SetTarget(ITargetable target) {
-        if (module) {
-            module.SetTarget(target);
+        TargetedModule tMod = module as TargetedModule;
+        if (tMod != null) {
+            tMod.SetTarget(target);
         }
     }
 }
@@ -171,9 +182,8 @@ public class HardPointGroup
 		CanDelete = 0x1, 
 		CanRename = 0x2, 
 		Passive = 0x4, 
-		Active = 0x8,
-		Trigger = 0x10,
-		Tracking = 0x20
+		Utility = 0x8,
+		Targeted = 0x10
 	};
 
     /// <summary>The name of the hardpoint group.</summary>
@@ -205,21 +215,17 @@ public class HardPointGroup
     /// <summary>The list of sockets in the group.</summary>
     private HardPoint[] hardpoints;
 
-    /// <summary>The current target for the socket group.</summary>
-    private ITargetable target;
-
     /// <summary>Default constructor.</summary>
     public HardPointGroup() {
         name = null;
         hardpoints = null;
-        target = null;
     }
 
     /// <summary>Create a new named HardPointGroup.</summary>
     /// <param name="name"></param>
 	public HardPointGroup(
 		string name, 
-		Flags flags = Flags.CanDelete | Flags.CanRename | Flags.Passive | Flags.Active | Flags.Trigger | Flags.Tracking
+		Flags flags = Flags.CanDelete | Flags.CanRename | Flags.Passive | Flags.Utility | Flags.Targeted
 	) : this() {
         this.name = name;
 		this.flags = flags;
@@ -255,11 +261,11 @@ public class HardPointGroup
 		}
 
 		if ((typeFlags & HPSocket.Utility) == HPSocket.Utility) {
-			return (flags & Flags.Active) == Flags.Active;
+			return (flags & Flags.Utility) == Flags.Utility;
 		}
 
 		if ((typeFlags & HPSocket.Targeted) == HPSocket.Targeted) {
-			return (flags & Flags.Trigger) == Flags.Trigger;
+			return (flags & Flags.Targeted) == Flags.Targeted;
 		}
 
 		// Dunno what happened, so no.
@@ -281,6 +287,16 @@ public class HardPointGroup
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// Get the target that is assigned to this group, if any.
+    /// </summary>
+    public ITargetable GetTarget() {
+        if (hardpoints == null || hardpoints.Length == 0) {
+            return null;
+        }
+        return hardpoints[0].GetTarget();
     }
 
     /// <summary>
@@ -314,36 +330,11 @@ public class HardPointGroup
     /// </summary>
     /// <param name="newTarget">The new target for the modules in the hardpoint group.</param>
     public void SetTarget(ITargetable newTarget) {
-        if (target != null) {
-            target.OnTargetDestroyed -= HandleTargetDestroyed;
-        }
-
-        target = newTarget;
-        if (target != null) {
-            target.OnTargetDestroyed += HandleTargetDestroyed;
-        }
-
         int numHardpoints = hardpoints.Length;
         for (int i = 0; i < numHardpoints; ++i) {
             if (hardpoints[i].CanTarget(newTarget)) {
-                hardpoints[i].SetTarget(target);
+                hardpoints[i].SetTarget(newTarget);
             }
-        }
-    }
-
-    /// <summary>
-    /// Handle when the target of the hardpoint group has been destroyed.
-    /// </summary>
-    /// <param name="destroyedTarget">The target that was destroyed.</param>
-    private void HandleTargetDestroyed(ITargetable destroyedTarget) {
-        int numHardpoints = hardpoints.Length;
-        for (int i = 0; i < numHardpoints; ++i) {
-            if (hardpoints[i].HasTarget(destroyedTarget)) {
-                hardpoints[i].SetTarget(null);
-            }
-        }
-        if (destroyedTarget == target) {
-            target = null;
         }
     }
 }
