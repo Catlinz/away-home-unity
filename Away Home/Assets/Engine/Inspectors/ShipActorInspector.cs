@@ -33,13 +33,13 @@ public class ShipActorInspector : Editor {
 		EditorGUILayout.Space();
 
         // Draw the basic fields.
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("computer"), true);
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("power"), true);
-		EditorGUILayout.PropertyField(serializedObject.FindProperty("armor"), true);
+        //EditorGUILayout.PropertyField(serializedObject.FindProperty("computer"), true);
+        //EditorGUILayout.PropertyField(serializedObject.FindProperty("power"), true);
+		//EditorGUILayout.PropertyField(serializedObject.FindProperty("armor"), true);
 
 		EditorGUILayout.Separator();
         // Draw the sockets.
-        InspectorHandleSockets();
+        //InspectorHandleSockets();
 
 		EditorGUILayout.Space();
 		EditorGUILayout.PropertyField(serializedObject.FindProperty("test"));
@@ -115,7 +115,7 @@ public class ShipActorInspector : Editor {
         else {
             sockets.InsertArrayElementAtIndex(index);
         }
-        HardPoint def = new HardPoint();
+        Hardpoint def = new Hardpoint();
         SerializedProperty socket = sockets.GetArrayElementAtIndex(index);
         socket.FindPropertyRelative("socketName").stringValue = def.name;
 
@@ -138,9 +138,10 @@ public class ShipActorInspector : Editor {
         shipTx = ship.transform;
         shipRot = (Tools.pivotRotation == PivotRotation.Local) ? shipTx.rotation : Quaternion.identity;
 
-
-		for (int i = 0; i < ship.modules.sockets.Length; ++i) {
-			SceneGUIHandleSocket(ref ship.modules.sockets[i]);
+        StructuralComponent structure = ship.GetComponent<StructuralComponent>();
+        Hardpoint[] hardpoints = structure.GetAllHardpoints();;
+		for (int i = 0; i < hardpoints.Length; ++i) {
+			SceneGUIHandleSocket(ref hardpoints[i]);
         }
     }
 
@@ -148,7 +149,7 @@ public class ShipActorInspector : Editor {
     /// Handles the drawing of a socket into the scene view.
     /// </summary>
     /// <param name="socket">The socket to draw into the scene view.</param>
-	private void SceneGUIHandleSocket(ref HardPoint socket) {
+	private void SceneGUIHandleSocket(ref Hardpoint socket) {
 		Vector3 point = shipTx.TransformPoint(socket.position);
 		Quaternion rot = shipRot * socket.rotation;
 
@@ -185,7 +186,7 @@ public class ShipActorInspector : Editor {
     /// <param name="socket">The socket to draw.</param>
     /// <param name="position">The position of the socket in world space.</param>
     /// <param name="rotation">The rotation of the socket in world space.</param>
-    private void SceneGUIDrawSocket(ref HardPoint socket, Vector3 position, Quaternion rotation) {
+    private void SceneGUIDrawSocket(ref Hardpoint socket, Vector3 position, Quaternion rotation) {
         Matrix4x4 mat4 = Handles.matrix;
         Color color = Handles.color;
 

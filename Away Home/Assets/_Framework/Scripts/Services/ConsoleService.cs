@@ -150,9 +150,9 @@ public class ConsoleService {
 
         GameObject obj = GameObject.Find(shipName);
         if (obj) {
-            InstallableModuleAsset asset = (InstallableModuleAsset)AssetDatabase.LoadAssetAtPath(assetPath, typeof(InstallableModuleAsset));
-            if (asset != null) {
-                OperationResult result = obj.GetComponent<ShipActorComponent>().InstallModule(asset, socketName);
+            GameObject prefab = (GameObject)AssetDatabase.LoadAssetAtPath(assetPath, typeof(GameObject));
+            if (prefab != null) {
+                OperationResult result = obj.GetComponent<StructuralComponent>().InstallModuleIn(socketName, prefab);
                 if (result.status != OperationResult.Status.OK) {
                     AppendLogLine(result.message);
                 }

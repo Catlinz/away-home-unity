@@ -6,11 +6,11 @@ using UnityEditor;
 /// <summary>
 /// Custom property drawer for rendering a ShipSocket in the inspector GUI.
 /// </summary>
-[CustomPropertyDrawer(typeof(ShipSocket))]
+[CustomPropertyDrawer(typeof(Hardpoint))]
 public class ShipSocketDrawer : PropertyDrawer {
 
     /// <summary>
-    /// Returns the height required by the ShipSocket for rendering into the Inspector GUI.
+    /// Returns the height required by the Hardpoint for rendering into the Inspector GUI.
     /// </summary>
     /// <param name="property">The property being drawn.</param>
     /// <param name="label">The label for the property.</param>

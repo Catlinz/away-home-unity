@@ -34,6 +34,15 @@ public class OperationResult {
 		this.message = message;
 	}
 
+	/// <summary>Compare Current values of each ModifiableFloat.</summary>
+	public static bool operator ==(OperationResult result, OperationResult.Status status) {
+		return result.status == status;
+	}
+	/// <summary>Compare Current values of each ModifiableFloat.</summary>
+	public static bool operator !=(OperationResult result, OperationResult.Status status) {
+		return result.status != status;
+	}
+
 	/// <summary>Shortcut method for creating a new OK <c>OperationResult</c>.</summary>
 	public static OperationResult OK(string message=null) {
 		return new OperationResult(OperationResult.Status.OK, message);

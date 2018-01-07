@@ -7,7 +7,7 @@ using UnityEngine;
 /// can be installed into a hardpoint.
 /// </summary>
 [System.Flags]
-public enum HardPointType
+public enum HardpointType
 {
     /// <summary>A structural module, such as a cargo bay or hangar.</summary>
     Structural = 0x1,
@@ -27,10 +27,10 @@ public enum HPSocket
     None = 0,
 
     // The module types for a socket.
-    Structural = HardPointType.Structural,
-    Passive = HardPointType.Passive,
-    Utility = HardPointType.Utility,
-    Targeted = HardPointType.Targeted,
+    Structural = HardpointType.Structural,
+    Passive = HardpointType.Passive,
+    Utility = HardpointType.Utility,
+    Targeted = HardpointType.Targeted,
 
     // The socket types.
     Passive_5M = 0xA | Passive,
@@ -62,9 +62,9 @@ public struct TurretArc {
 /// Represents a HardPoint into which a module can be placed on an Actor.
 /// </summary>
 [System.Serializable]
-public class HardPoint
+public class Hardpoint
 {
-    #region PUBLIC_VARS
+    #region FIELDS
     /// <summary>The name of the hardpoint to identify it by.</summary>
     public string name;
 
@@ -79,21 +79,21 @@ public class HardPoint
 	public Vector3 position;
     /// <summary>The rotation of the hardpoint relative to the actor.</summary>
 	public Quaternion rotation;
-    #endregion
 
-    #region PRIVATE_VARS
-    /// <summary>The module that is currently installed in the socket (if any).</summary>
-    private ActorModuleClass module;
-
-    #endregion
-
-    #region PUBLIC_PROPS
     /// <summary>The module that is current installed in the socket (if any).</summary>
-    public ActorModuleClass Module { get { return module;  } }
+    public ActorModule Module { get { return module;  } }
+
+    /// <summary>Whether or not the hardpoint has a module.</summary>
+    public bool IsEmpty { get { return module == null; } }
+
+    /// <summary>The module that is currently installed in the socket (if any).</summary>
+    private ActorModule module;
+
     #endregion
+
 
     /// <summary>Default constructor</summary>
-    public HardPoint() {
+    public Hardpoint() {
         name = null;
         socket = HPSocket.None;
         arcLimits = new TurretArc(45, 45, 45, 0);
@@ -105,7 +105,7 @@ public class HardPoint
     /// <summary>
     /// Create a new HardPoint with the specific socket type.
     /// </summary>
-    public HardPoint(HPSocket socket) 
+    public Hardpoint(HPSocket socket) 
         : this() {
         this.socket = socket;
     }
@@ -113,9 +113,7 @@ public class HardPoint
     /// <summary>
     /// Check if the hardpoint has a module installed that can target the provided target.
     /// </summary>
-    /// <param name="target">The targetable object to test.</param>
-    /// <returns>True if there is a module installed that can target the target.</returns>
-    public bool CanTarget(ITargetable target) {
+    public bool CanTarget(ITarget target) {
         TargetedModule tmod = module as TargetedModule;
         return (tmod != null && tmod.CanTarget(target));
     }
@@ -131,33 +129,39 @@ public class HardPoint
     /// <summary>
     /// Get the current target of the installed module, if any.
     /// </summary>
-    public ITargetable GetTarget() {
+    public ITarget GetTarget() {
         TargetedModule tMod = module as TargetedModule;
-        return (tMod != null) ? tMod.getTarget() : null;
+        return (tMod != null) ? tMod.GetTarget() : null;
     }
 
     /// <summary>
-    /// Check if the HardPoint has a module installed that is currently targeting target.
+    /// Check if the HardPoint has a module installed that is currently targeting
+    /// the provided target.
     /// </summary>
-    /// <param name="target">The targetable object to test.</param>
-    /// <returns>True if there is a module installed that is currently targeting target.</returns>
-    public bool HasTarget(ITargetable target) {
+    public bool HasTarget(ITarget target) {
         TargetedModule tMod = module as TargetedModule;
         return (tMod != null && tMod.HasTarget(target));
     }
 
     /// <summary>
+    /// Returns whether the hardpoint can install a module with the 
+    /// provided type of socket.
+    /// </summary>
+    public bool IsCompatible(HPSocket toInstall) {
+        return socket == toInstall;
+    }
+
+    /// <summary>
     /// Set the module that is currently installed in the HardPoint.
     /// </summary>
-    public void SetModule(ActorModuleClass module) {
+    public void SetModule(ActorModule module) {
         this.module = module;
     }
 
     /// <summary>
     /// Set the current target for the installed module (if any).
     /// </summary>
-    /// <param name="target">The targetable object for the module to target.</param>
-    public void SetTarget(ITargetable target) {
+    public void SetTarget(ITarget target) {
         TargetedModule tMod = module as TargetedModule;
         if (tMod != null) {
             tMod.SetTarget(target);
@@ -169,7 +173,7 @@ public class HardPoint
 /// The <c>HardPointGroup</c> holds a group of <c>HardPoint</c>s that can be activated as a group.
 /// </summary>
 [System.Serializable]
-public class HardPointGroup
+public class HardpointGroup
 {
     /// <summary>Enum of constants to use for default hardpoint groups indexes.</summary>
     public enum Index { Primary, Secondary, Utility, Passive };
@@ -213,17 +217,17 @@ public class HardPointGroup
 	}
 
     /// <summary>The list of sockets in the group.</summary>
-    private HardPoint[] hardpoints;
+    private Hardpoint[] hardpoints;
 
     /// <summary>Default constructor.</summary>
-    public HardPointGroup() {
+    public HardpointGroup() {
         name = null;
         hardpoints = null;
     }
 
     /// <summary>Create a new named HardPointGroup.</summary>
     /// <param name="name"></param>
-	public HardPointGroup(
+	public HardpointGroup(
 		string name, 
 		Flags flags = Flags.CanDelete | Flags.CanRename | Flags.Passive | Flags.Utility | Flags.Targeted
 	) : this() {
@@ -236,7 +240,7 @@ public class HardPointGroup
     /// </summary>
     /// <param name="hardpoint">The HardPoint to add to the group.</param>
     /// <returns>True if the hardpoint was added, false if it already is in the group.</returns>
-    public bool Add(HardPoint hardpoint) {
+    public bool Add(Hardpoint hardpoint) {
         if (Contains(hardpoint.name)) { return false; }
 
         hardpoints = AHArray.Added(hardpoints, hardpoint);
@@ -248,13 +252,13 @@ public class HardPointGroup
     /// </summary>
     /// <param name="hardpoint">The hardpoint to try and add to the group.</param>
     /// <returns><c>true</c> if this group can add the specified hardpoint; otherwise, <c>false</c>.</returns>
-    public bool CanAddHardPoint(HardPoint hardpoint) {
+    public bool CanAddHardPoint(Hardpoint hardpoint) {
 		if (hardpoint.Module == null) {
 			return false; // Cannot add an empty socket.
 		}
 
         // See if the socket group can take the module.
-        ActorModuleClass module = hardpoint.Module;
+        ActorModule module = hardpoint.Module;
         HPSocket typeFlags = module.socket;
 		if ((typeFlags & HPSocket.Passive) == HPSocket.Passive) {
 			return (flags & Flags.Passive) == Flags.Passive;
@@ -292,7 +296,7 @@ public class HardPointGroup
     /// <summary>
     /// Get the target that is assigned to this group, if any.
     /// </summary>
-    public ITargetable GetTarget() {
+    public ITarget GetTarget() {
         if (hardpoints == null || hardpoints.Length == 0) {
             return null;
         }
@@ -304,10 +308,10 @@ public class HardPointGroup
     /// </summary>
     /// <param name="socketName">The name of the socket to remove.</param>
     /// <returns>The ShipSocket that was removed, or null if the socket wasn't found.</returns>
-    public HardPoint Remove(string socketName) {
+    public Hardpoint Remove(string socketName) {
         for (int i = 0; i < hardpoints.Length; ++i) {
             if (hardpoints[i].name == socketName) {
-                HardPoint hardpoint = hardpoints[i];
+                Hardpoint hardpoint = hardpoints[i];
                 hardpoints = AHArray.Removed(hardpoints, i);
                 return hardpoint;
             }
@@ -320,7 +324,7 @@ public class HardPointGroup
     /// </summary>
     /// <param name="hardpoint">The HardPoint to remove.</param>
     /// <returns>The HardPoint that was removed or null if it wasn't found.</returns>
-    public HardPoint Remove(HardPoint hardpoint) {
+    public Hardpoint Remove(Hardpoint hardpoint) {
         return Remove(hardpoint.name);
     }
 
@@ -329,7 +333,7 @@ public class HardPointGroup
     /// previous target and listen for when the target is destroyed.
     /// </summary>
     /// <param name="newTarget">The new target for the modules in the hardpoint group.</param>
-    public void SetTarget(ITargetable newTarget) {
+    public void SetTarget(ITarget newTarget) {
         int numHardpoints = hardpoints.Length;
         for (int i = 0; i < numHardpoints; ++i) {
             if (hardpoints[i].CanTarget(newTarget)) {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UtilityModule : ActorModuleClass {
+public class UtilityModule : ActorModule {
 
 	#region PUBLIC FIELDS
 	public int activeComputerResources;

@@ -11,7 +11,7 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour {
     #region FIELDS
     private static T _instance;
 
-    private static readonly object _lock;
+    private static readonly object _lock = new object();
 
     /// <summary>Whether or not should use DontDestroyOnLoad().</summary>
     protected bool _persistent = true;

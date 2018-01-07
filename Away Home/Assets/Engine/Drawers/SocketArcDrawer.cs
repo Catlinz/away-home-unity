@@ -6,7 +6,7 @@ using UnityEditor;
 /// <summary>
 /// A custom PropertyDrawer for drawing the movement arcs for a socket in the Inspector GUI.
 /// </summary>
-[CustomPropertyDrawer(typeof(SocketArc))]
+[CustomPropertyDrawer(typeof(TurretArc))]
 public class SocketArcDrawer : PropertyDrawer {
 
     /// <summary>

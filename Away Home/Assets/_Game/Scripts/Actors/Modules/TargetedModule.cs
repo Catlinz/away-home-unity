@@ -2,15 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TargetedModule : ActorModuleClass {
+public class TargetedModule : ActorModule {
 
-	// Use this for initialization
-	void Start () {
-		
+	public bool CanTarget(ITarget target) {
+		return false;
+		// TODO
 	}
-	
-	// Update is called once per frame
-	void Update () {
-		
+
+	public ITarget GetTarget() {
+		return null;
+	}
+
+	public bool HasTarget(ITarget target) {
+		return false;
+	}
+
+	public void SetTarget(ITarget target) {
+
 	}
 }

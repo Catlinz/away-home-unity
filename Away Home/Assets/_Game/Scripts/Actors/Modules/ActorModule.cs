@@ -5,9 +5,16 @@ using UnityEngine;
 /// <summary>
 /// The base class for all Ship Modules to inherit from.
 /// </summary>
-public class ActorModuleClass : MonoBehaviour {
+public class ActorModule : MonoBehaviour {
 
-    #region PUBLIC_FIELDS
+	#region TYPES
+	public enum RemovalReason { Uninstalled, Destroyed };
+	public enum Change { Installed, Uninstalled, Enabled, Disabled, Destroyed};
+
+	public delegate void StatusChanged(Change change, ActorModule module);
+	#endregion
+
+    #region PUBLIC FIELDS
 	/// <summary>The amount of computer resources consumed by the Module when enabled.</summary>
 	public int idleComputerResources;
 
@@ -16,9 +23,6 @@ public class ActorModuleClass : MonoBehaviour {
 
     /// <summary>The type of hardpoint socket that is required to install the module.</summary>
     public HPSocket socket;
-    #endregion
-
-    #region PUBLIC_PROPS
 
     /// <summary>Whether or not the Module is currently enabled.</summary>
     public bool IsEnabled {
@@ -26,24 +30,42 @@ public class ActorModuleClass : MonoBehaviour {
     }
     #endregion
 
-    #region PROTECTED_VARS
+    #region PROTECTED FIELDS
+	/// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
+    protected CoreSystemComponent system;
+
+	/// <summary>A reference to the prefab that instantiated the module.</summary>
+	protected GameObject prefab;
+
     /// <summary>Whether or not the module is currently enabled.</summary>
     protected bool isEnabled;
-
-    /// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
-    protected CoreSystemComponent system;
     #endregion
 
 	/// <summary>
 	/// Instantiates an instance of a module prefab and installs it into a specified hardpoint on a 
 	/// specified parent GameObject.  The instance of the module component is returned.
 	/// </summary>
-	public static ActorModuleClass Instantiate(GameObject prefab, HardPoint hardpoint, GameObject parent) {
+	public static ActorModule Instantiate(GameObject prefab, Hardpoint hardpoint, GameObject parent) {
 		GameObject go = GameObject.Instantiate(prefab, parent.transform);
-		ActorModuleClass mod = go.GetComponent<ActorModuleClass>();
-		mod.Instantiate(hardpoint.position, hardpoint.rotation);
-
+		ActorModule mod = go.GetComponent<ActorModule>();
+		mod.prefab = prefab;
+		mod.InstantiateModule(hardpoint.position, hardpoint.rotation);
+		hardpoint.SetModule(mod);
 		return mod;
+	}
+
+	/// <summary>
+	/// Virtual method that is used to destroy the module.  This method 
+	/// destroys the GameObject the module is attached to and returns 
+	/// a reference to the prefab used to create the module, if any.
+	/// </summary>
+	public virtual GameObject DestroyModule() {
+		GameObject prefab = this.prefab;
+		this.prefab = null;
+
+		GameObject.Destroy(gameObject);
+		
+		return prefab;
 	}
 
     /// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
@@ -118,7 +140,7 @@ public class ActorModuleClass : MonoBehaviour {
 	/// Virtual Instantiate method to setup placing the module on the parent 
 	/// actor, be it a ship or other vehicle.
 	/// </summary>
-	public virtual void Instantiate(Vector3 relPosition, Quaternion relRotation) {
+	public virtual void InstantiateModule(Vector3 relPosition, Quaternion relRotation) {
 		gameObject.transform.localPosition = relPosition;
 		gameObject.transform.localRotation = relRotation;
 	}
