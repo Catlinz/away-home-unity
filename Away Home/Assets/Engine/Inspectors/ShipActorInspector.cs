@@ -115,19 +115,9 @@ public class ShipActorInspector : Editor {
         else {
             sockets.InsertArrayElementAtIndex(index);
         }
-        ShipSocket def = new ShipSocket();
+        HardPoint def = new HardPoint();
         SerializedProperty socket = sockets.GetArrayElementAtIndex(index);
-        socket.FindPropertyRelative("socketName").stringValue = def.socketName;
-
-        SerializedProperty cpu = socket.FindPropertyRelative("maxCpuBandwidth");
-        cpu.FindPropertyRelative("modifier").floatValue = def.maxCpuBandwidth.modifier;
-        cpu.FindPropertyRelative("added").floatValue = def.maxCpuBandwidth.added;
-        cpu.FindPropertyRelative("initial").floatValue = def.maxCpuBandwidth.initial;
-
-		SerializedProperty power = socket.FindPropertyRelative("maxEnergyOutput");
-        power.FindPropertyRelative("modifier").floatValue = def.maxEnergyOutput.modifier;
-		power.FindPropertyRelative("added").floatValue = def.maxEnergyOutput.added;
-		power.FindPropertyRelative("initial").floatValue = def.maxEnergyOutput.initial;
+        socket.FindPropertyRelative("socketName").stringValue = def.name;
 
         SerializedProperty arc = socket.FindPropertyRelative("arcLimits");
         arc.FindPropertyRelative("up").floatValue = def.arcLimits.up;
@@ -158,7 +148,7 @@ public class ShipActorInspector : Editor {
     /// Handles the drawing of a socket into the scene view.
     /// </summary>
     /// <param name="socket">The socket to draw into the scene view.</param>
-	private void SceneGUIHandleSocket(ref ShipSocket socket) {
+	private void SceneGUIHandleSocket(ref HardPoint socket) {
 		Vector3 point = shipTx.TransformPoint(socket.position);
 		Quaternion rot = shipRot * socket.rotation;
 
@@ -195,7 +185,7 @@ public class ShipActorInspector : Editor {
     /// <param name="socket">The socket to draw.</param>
     /// <param name="position">The position of the socket in world space.</param>
     /// <param name="rotation">The rotation of the socket in world space.</param>
-    private void SceneGUIDrawSocket(ref ShipSocket socket, Vector3 position, Quaternion rotation) {
+    private void SceneGUIDrawSocket(ref HardPoint socket, Vector3 position, Quaternion rotation) {
         Matrix4x4 mat4 = Handles.matrix;
         Color color = Handles.color;
 

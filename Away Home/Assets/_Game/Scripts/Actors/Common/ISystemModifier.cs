@@ -9,6 +9,11 @@ public enum ModifiableStat
 
     ComputerResources,
 
+    Thrust,
+    ManeuveringThrust,
+
+    Mass,
+
     OverclockDamage
 }
 

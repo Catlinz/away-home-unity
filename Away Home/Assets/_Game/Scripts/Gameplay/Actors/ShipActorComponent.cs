@@ -44,7 +44,7 @@ public class ShipActorComponent : MonoBehaviour {
     /// a PARTIAL result is returned with a message indicating why.  Otherwise, an OK result is returned.
     /// </returns>
 	public OperationResult InstallModule(InstallableModuleAsset asset, string socketName) {
-		ShipSocket socket = modules.GetSocket(socketName);
+		HardPoint socket = modules.GetSocket(socketName);
 
 		// See if we can install the module into the socket.
 		OperationResult canInstall = modules.CanInstallInSocket(asset, socket);
@@ -57,11 +57,7 @@ public class ShipActorComponent : MonoBehaviour {
 			return new OperationResult(OperationResult.Status.FAIL, "Cannot install asset, invalid Prefab.");
 		}
 
-        GameObject go = GameObject.Instantiate(asset.prefab, gameObject.transform);
-		go.transform.localPosition = socket.position;
-		go.transform.localRotation = socket.rotation;
-		ShipModuleClass mod = go.GetComponent<ShipModuleClass>();
-		modules.InitFromAssetInSocket(mod, asset, socket);
+        ActorModuleClass mod = ActorModuleClass.Instantiate(asset.prefab, socket, gameObject);
 
 		// Try and enable the component, if we can.
 		return modules.TryEnable(socket, this);
@@ -73,7 +69,7 @@ public class ShipActorComponent : MonoBehaviour {
     /// <param name="socket">The socket to remove the module from.</param>
     /// <param name="reason">The reason the module is being removed.</param>
     /// <returns>The module asset that the module was created from, or null if the socket was empty.</returns>
-    public InstallableModuleAsset RemoveModuleFrom(ShipSocket socket, ModuleSystem.RemovedReason reason = ModuleSystem.RemovedReason.Uninstalled) {
+    public InstallableModuleAsset RemoveModuleFrom(HardPoint socket, ModuleSystem.RemovedReason reason = ModuleSystem.RemovedReason.Uninstalled) {
         // Make sure there's actually something in the socket to uninstall.
         if (socket.Module == null) {
             return null;
@@ -89,7 +85,7 @@ public class ShipActorComponent : MonoBehaviour {
     /// <param name="socketName">The name of the socket to remove the module from.</param>
     /// <returns>The asset for the module, or null if the socket was empty.</returns>
     public InstallableModuleAsset UninstallModuleFrom(string socketName) {
-        ShipSocket socket = modules.GetSocket(socketName);
+        HardPoint socket = modules.GetSocket(socketName);
         return RemoveModuleFrom(socket, ModuleSystem.RemovedReason.Uninstalled);
     }
 
@@ -98,13 +94,11 @@ public class ShipActorComponent : MonoBehaviour {
     /// </summary>
     private void OnDisable() {
         // Remove handlers from the computer system.
-        computer.onAllocatedCpuLost -= HandleCpuLost;
-        computer.onIdleCpuGained -= HandleCpuGained;
-        computer.onSystemDamaged -= HandleComputerDamaged;
+        computer.onResourcesChanged -= HandleComputerResourcesChanged;
+        computer.onDamaged -= HandleComputerDamaged;
 
         // Remove handlers from the power system.
-        power.onReservedEnergyLost -= HandleEnergyLost;
-        power.onUsableEnergyGained -= HandleEnergyGained;
+        power.onEnergyChanged -= HandleEnergyChanged;
         power.onDamaged -= HandlePowerDamaged;
     }
 
@@ -114,13 +108,11 @@ public class ShipActorComponent : MonoBehaviour {
         InstallModule(test, "TEST");
 
         // Add the handlers for the computer system.
-        computer.onAllocatedCpuLost += HandleCpuLost;
-        computer.onIdleCpuGained += HandleCpuGained;
-        computer.onSystemDamaged += HandleComputerDamaged;
+        computer.onResourcesChanged += HandleComputerResourcesChanged;
+        computer.onDamaged += HandleComputerDamaged;
 
         // Add the handlers for the power system.
-        power.onReservedEnergyLost += HandleEnergyLost;
-        power.onUsableEnergyGained += HandleEnergyGained;
+        power.onEnergyChanged += HandleEnergyChanged;
         power.onDamaged += HandlePowerDamaged;
 	}
 	
@@ -137,21 +129,15 @@ public class ShipActorComponent : MonoBehaviour {
 
     }
 
-    private void HandleCpuGained(float cpuAvailable) {
+    private void HandleComputerResourcesChanged(float resources) {
 
     }
 
-    private void HandleCpuLost(float energyLost) {
+
+    private void HandleEnergyChanged(float energy) {
 
     }
 
-    private void HandleEnergyGained(float freeEnergy) {
-
-    }
-
-    private void HandleEnergyLost(float cpuLost) {
-
-    }
 
     private void HandlePowerDamaged(float damage) {
 

@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class UtilityModule : ActorModuleClass {
 
+	#region PUBLIC FIELDS
+	public int activeComputerResources;
+
+	public int activeEnergyDrain;
+	#endregion
+
 	#region PROTECTED_VARS
 	/// <summary>Whether or not the module is currently active.</summary>
 	protected bool isActivated = false;
@@ -23,7 +29,7 @@ public class UtilityModule : ActorModuleClass {
 	/// <description><c>InvalidAsset</c> if the module asset is null or cannot be converted to an <c>ActiveModuleAsset</c></description>
 	/// </item>
 	/// <item>
-	/// <description><c>InvalidShip</c> if the ship reference is null.</description>
+	/// <description><c>InvalidSystem</c> if the ship reference is null.</description>
 	/// </item>
 	/// <item>
 	/// <description><c>InsufficientPower</c> if there is not enough power to activate the module.</description>
@@ -38,24 +44,18 @@ public class UtilityModule : ActorModuleClass {
 			return ModuleResult.AlreadyActive;
 		}
 
-		ActiveModuleAsset asset = moduleAsset as ActiveModuleAsset;
-
-		// Do sanity checks to make sure we have a valid module asset and ship.
-		if (!moduleAsset) {
-			return ModuleResult.InvalidAsset;
-		}
-		if (!ship) {
-			return ModuleResult.InvalidShip;
+		if (!system) {
+			return ModuleResult.InvalidSystem;
 		}
 
 		// Try and allocate the required CPU and energy for the module to activate.
-		if (ship.computer.AllocateCpu(asset.activeCpuUsage)) {
-			if (ship.power.Reserve(asset.activeEnergyDrain)) {
+		if (system.computer.AllocateCpu(activeComputerResources)) {
+			if (system.power.Reserve(activeEnergyDrain)) {
 				isActivated = true;
 				return ModuleResult.Success;
 			}
 			else { // Not enough power
-				ship.computer.DeallocateCpu(asset.activeCpuUsage);
+				system.computer.DeallocateCpu(activeComputerResources);
 				return ModuleResult.InsufficientPower;
 			}
 		}
@@ -77,7 +77,7 @@ public class UtilityModule : ActorModuleClass {
 	/// <description><c>InvalidAsset</c> if the module asset is null or cannot be converted to an <c>ActiveModuleAsset</c></description>
 	/// </item>
 	/// <item>
-	/// <description><c>InvalidShip</c> if the ship reference is null.</description>
+	/// <description><c>InvalidSystem</c> if the ship reference is null.</description>
 	/// </item>
 	/// <item>
 	/// <description><c>InsufficientPower</c> if there is not enough power to activate the module.</description>
@@ -90,17 +90,12 @@ public class UtilityModule : ActorModuleClass {
 	public virtual ModuleResult DeactivateModule() {
 		if (!isActivated) { return ModuleResult.AlreadyInactive; }
 
-		ActiveModuleAsset asset = moduleAsset as ActiveModuleAsset;
-		// Do sanity checks to make sure we have a valid module asset and ship.
-		if (!moduleAsset) {
-			return ModuleResult.InvalidAsset;
-		}
-		if (!ship) {
-			return ModuleResult.InvalidShip;
+		if (!system) {
+			return ModuleResult.InvalidSystem;
 		}
 
-		ship.power.Free(asset.activeEnergyDrain);
-		ship.computer.DeallocateCpu(asset.activeCpuUsage);
+		system.power.Free(activeEnergyDrain);
+		system.computer.DeallocateCpu(activeComputerResources);
 
 		return ModuleResult.Success;
 	}
@@ -116,18 +111,5 @@ public class UtilityModule : ActorModuleClass {
 	/// <seealso cref="ShipModuleClass.EnableModule"/>
 	public override ModuleResult EnableModule() {
 		return base.EnableModule();
-	}
-
-	/// <summary>
-	/// Returns that this is an Active module.
-	/// </summary>
-	public override ShipModuleClass.TypeFlags GetTypeFlags() {
-		return ShipModuleClass.TypeFlags.Active;
-	}
-
-	/// <summary>Initializes the Module component from an asset for the module.</summary>
-	/// <seealso cref="ShipModuleClass.InitFromAssetInSocket"/>
-	public override ModuleResult InitFromAssetInSocket(InstallableModuleAsset asset, ShipSocket socket) {
-		return base.InitFromAssetInSocket(asset, socket);
 	}
 }

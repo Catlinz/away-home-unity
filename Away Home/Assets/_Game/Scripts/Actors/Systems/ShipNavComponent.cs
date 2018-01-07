@@ -6,57 +6,58 @@ using UnityEngine;
 /// The component that controls the Movement of the ship.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
-public class ShipMovementComponent : MonoBehaviour
-{
-
-    [Header("Turn")]
+public class ShipNavComponent : MonoBehaviour {
+	#region PUBLIC FIELDS
+	[Header("Visual")]
     /** The max role that occurs when the ship turns */
     public float maxRoll = 20f;
+	#endregion
 
-    /** The max rate at which the ship can turn */
-    public float maxTurnRate = 90f;
+	#region PUBLIC PROPERTIES
+	public float DesiredHeading {
+		get { return desiredHeading; }
+	}
 
-    /** The acceleration for the ships turn rate */
-    public float maxTurnAcceleration = 360f;
-    [Space(10)]
+	public float Throttle {
+		get { return throttle; }
+	}
+	#endregion
 
-    [Header("Speed")]
-    /** The speed with which the ship accelerates */
-    public float maxAcceleration = 10f;
+	#region PRIVATE FIELDS
+	/// <summary>A reference to the ShipThrustComponent.</summary>
+	private ShipThrustComponent engine;
+	
+	/** The RigidBody component of the ship */
+    private Rigidbody rb;
 
-    /** The max velocity of the ship */
-    public float maxSpeed = 10f;
-
-
-    /** The rate at which the ship is currently turning */
+	/** The rate at which the ship is currently turning */
     private float turnRate;
 
     /** The amount to scale the turn rate by */
     private float turnScale;
 
-    /** The amount the ship is currently rolled */
+	/** The amount the ship is currently rolled */
     private float rollDeg;
 
     /** The current heading of the ship */
     private float heading;
 
-    /** The desired heading for the ship */
+	/** The desired heading for the ship */
     private float desiredHeading;
 
     /** The current throttle percentage for the ship */
     private float throttle;
+	#endregion
 
-    /** The RigidBody component of the ship */
-    private Rigidbody rb;
-
-    public float ComputeHeading(float deltaTime) {
+	#region PUBLIC METHODS
+	public float ComputeHeading(float deltaTime) {
         float curHeading = heading;
         float headingDelta = Mathf.DeltaAngle(curHeading, desiredHeading);
 
         if (headingDelta != 0f && turnScale != 0f) {
             float curTurnRate = turnRate;
-            float maxTurnDelta = maxTurnAcceleration * deltaTime;
-            float scaledMaxTurnRate = maxTurnRate * turnScale;
+            float maxTurnDelta = engine.RotationalAcceleration(turnScale) * deltaTime;
+            float scaledMaxTurnRate = engine.MaxRotationalVelocity * turnScale;
 
             float newTurnRate = (headingDelta > 0f) ? curTurnRate + maxTurnDelta : curTurnRate - maxTurnDelta;
             turnRate = Mathf.Clamp(newTurnRate, -scaledMaxTurnRate, scaledMaxTurnRate);
@@ -75,20 +76,20 @@ public class ShipMovementComponent : MonoBehaviour
 
     }
 
-    /** Update the Banking of the ship based on the turn rate. */
+	/** Update the Banking of the ship based on the turn rate. */
     public float ComputeRoll(float deltaTime, Vector3 rotation) {
-        float desiredRoll = -maxRoll * (turnRate / maxTurnRate);
+        float desiredRoll = -maxRoll * (turnRate / engine.MaxRotationalVelocity);
         float curRoll = rotation.z;
-        float curRate = maxRoll * (maxTurnAcceleration / maxTurnRate);
+        float curRate = maxRoll * (engine.RotationalAcceleration(1f) / engine.MaxRotationalVelocity);
 
         float newRoll = Mathf.MoveTowardsAngle(curRoll, desiredRoll, curRate * deltaTime);
         rollDeg = newRoll;
         return newRoll;
     }
 
-    public Vector3 ComputeVelocity(float deltaTime, Vector3 oldVelocity) {
-        float desiredSpeed = throttle * maxSpeed;
-        float maxAccel = maxAcceleration;
+	public Vector3 ComputeVelocity(float deltaTime, Vector3 oldVelocity) {
+        float desiredSpeed = throttle * engine.MaxVelocity;
+        float maxAccel = engine.Acceleration(throttle);
 
         Vector3 desiredVelocity = AHMath.HeadingAngleToVectorXZ(heading) * desiredSpeed;
         Vector3 newVelocity = Vector3.MoveTowards(oldVelocity, desiredVelocity, deltaTime * maxAccel);
@@ -96,43 +97,44 @@ public class ShipMovementComponent : MonoBehaviour
         return newVelocity;
     }
 
-    /** The desired heading angle */
-    public float GetDesiredHeading() { return desiredHeading; }
-
-    /** The current throttle setting */
-    public float GetThrottle() { return throttle; }
-
-    /** Set the desired heading vector */
+	/** Set the desired heading vector */
     public void SetDesiredHeading(Vector3 headingVector) {
         desiredHeading = AHMath.VectorXZToHeadingAngle(headingVector);
         turnScale = headingVector.magnitude;
     }
 
-    /** Set the throttle percentage for the ship */
+	/** Set the throttle percentage for the ship */
     public void SetThrottle(float newThrottle, float maxThrottle = 1f) {
         throttle = Mathf.Clamp(newThrottle, 0f, maxThrottle);
     }
+	#endregion
 
-    // Initial basic initialization
-    private void Awake() {
+	#region UNITY HOOKS
+	// Initial basic initialization
+    private void Awake() 
+	{
+		engine = null;
+		rb = null;
+
         turnRate = 0f;
         rollDeg = 0f;
         throttle = 0f;
     }
 
-
-    // Use this for initialization after Awake().
+    // Gets the component references and initiales the heading.
     void Start() {
         heading = gameObject.transform.rotation.eulerAngles.y * Mathf.Rad2Deg;
         desiredHeading = heading;
+
+		engine = GetComponent<ShipThrustComponent>();
 
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezePositionY;
     }
 
-    // Update during the physics steps.
-    private void FixedUpdate() {
+	// Update during the physics steps.
+    void FixedUpdate() {
 
         Vector3 rotation = transform.rotation.eulerAngles;
 
@@ -147,4 +149,5 @@ public class ShipMovementComponent : MonoBehaviour
         Vector3 newVelocity = ComputeVelocity(Time.deltaTime, rb.velocity);
         rb.velocity = newVelocity;
     }
+	#endregion
 }
