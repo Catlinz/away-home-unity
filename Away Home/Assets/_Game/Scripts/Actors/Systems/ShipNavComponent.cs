@@ -51,50 +51,17 @@ public class ShipNavComponent : MonoBehaviour {
 
 	#region PUBLIC METHODS
 	public float ComputeHeading(float deltaTime) {
-        float curHeading = heading;
-        float headingDelta = Mathf.DeltaAngle(curHeading, desiredHeading);
-
-        if (headingDelta != 0f && turnScale != 0f) {
-            float curTurnRate = turnRate;
-            float maxTurnDelta = engine.RotationalAcceleration(turnScale) * deltaTime;
-            float scaledMaxTurnRate = engine.MaxRotationalVelocity * turnScale;
-
-            float newTurnRate = (headingDelta > 0f) ? curTurnRate + maxTurnDelta : curTurnRate - maxTurnDelta;
-            turnRate = Mathf.Clamp(newTurnRate, -scaledMaxTurnRate, scaledMaxTurnRate);
-
-            // Calculate the new heading
-            float turnDelta = turnRate * deltaTime;
-            float newHeading = AHMath.NormalizeAngle(curHeading + ((Mathf.Abs(headingDelta) > Mathf.Abs(turnDelta)) ? turnDelta : headingDelta));
-            heading = newHeading;
-            return newHeading;
-        }
-        else {
-            turnRate = 0f;
-            heading = curHeading;
-            return curHeading;
-        }
-
+        return desiredHeading;
     }
 
 	/** Update the Banking of the ship based on the turn rate. */
     public float ComputeRoll(float deltaTime, Vector3 rotation) {
-        float desiredRoll = -maxRoll * (turnRate / engine.MaxRotationalVelocity);
-        float curRoll = rotation.z;
-        float curRate = maxRoll * (engine.RotationalAcceleration(1f) / engine.MaxRotationalVelocity);
-
-        float newRoll = Mathf.MoveTowardsAngle(curRoll, desiredRoll, curRate * deltaTime);
-        rollDeg = newRoll;
-        return newRoll;
+        return 0f;
     }
 
 	public Vector3 ComputeVelocity(float deltaTime, Vector3 oldVelocity) {
-        float desiredSpeed = throttle * engine.MaxVelocity;
-        float maxAccel = engine.Acceleration(throttle);
-
-        Vector3 desiredVelocity = AHMath.HeadingAngleToVectorXZ(heading) * desiredSpeed;
-        Vector3 newVelocity = Vector3.MoveTowards(oldVelocity, desiredVelocity, deltaTime * maxAccel);
-
-        return newVelocity;
+        float accel = engine.Acceleration(throttle);
+        return new Vector3(0, 0, accel * deltaTime) + oldVelocity;
     }
 
 	/** Set the desired heading vector */
