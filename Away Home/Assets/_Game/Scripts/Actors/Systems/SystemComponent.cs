@@ -13,8 +13,43 @@ public class SystemComponent : MonoBehaviour {
     #endregion
 
     #region FIELDS
+    [Header("System Properties")]
+    /* Automatically enable the system if there is enough resources. */
+    public bool autoEnable = true;
+
+    /* The amount of power required by the system when active. */
+    public ModifiableInt powerUsage;
+
+    /* The amount of computer resources required by the system when active */
+    public ModifiableInt computerUsage;
 
     protected SystemModifierList _modifiers;
+    protected CoreSystemComponent _sys;
+    #endregion
+
+    #region PROPERTIES
+    /// <summary>Can the System component be manually triggered?</summary>
+    public virtual bool IsTriggerable {
+        get { return false; }
+    }
+    #endregion
+
+    #region SYSTEM CONTROL
+    public virtual OperationResult Activate() {
+
+    }
+
+    /// <summary>
+    /// Returns true if the system has enough power and CPU to be activated.
+    /// </summary>
+    public bool CanActivate() {
+        return _sys.power.FreeEnergy >= powerUsage &&
+               _sys.computer.IdleResources >= computerUsage;
+    }
+
+    public virtual OperationResult Deactivate() {
+
+    }
     #endregion
 
     #region MODIFIERS
@@ -52,6 +87,15 @@ public class SystemComponent : MonoBehaviour {
     ///</summary>
     protected virtual void RecalculateStat(ModifiableStat stat) {
         Debug.Assert(false, "Must implement RecalculateStat()");
+    }
+    #endregion
+
+    #region UNITY HOOKS
+    /// <summary>
+    /// Automatically grab the core system component.
+    /// </summary>
+    private void Start() {
+        _sys = GetComponent<CoreSystemComponent>();
     }
     #endregion
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CoreSystemComponent : SystemComponent {
+public class CoreSystemComponent : MonoBehaviour {
 
     #region FIELDS
     [Header("Mass")]
@@ -37,6 +37,8 @@ public class CoreSystemComponent : SystemComponent {
 
     /** The list of hardpoints for structural types of modules. */
     public Hardpoint[] structures;
+
+    protected SystemModifierList _modifiers;
     #endregion
 
     #region EVENTS
@@ -291,11 +293,38 @@ public class CoreSystemComponent : SystemComponent {
     }
     #endregion
 
-    #region  INTERFACE METHODS
+    #region  MODIFIER METHODS
+    /// <summary>
+    /// Adds a modifier to the System Component.
+    /// </summary>
+    /// <param name="modifier">The SystemModifier to add.</param>
+    public void AddModifier(SystemModifier modifier) {
+        _modifiers.Add(modifier);
+        RecalculateStat(modifier.stat);
+    }
+
+    /// <summary>
+    /// Removes a modifier from the System Component.
+    /// </summary>
+    /// <param name="modifier">The ISystemModifier to remove.  Uses Equals().</param>
+    public void RemoveModifier(SystemModifier modifier) {
+        if (_modifiers.Remove(modifier)) {
+            RecalculateStat(modifier.stat);
+        }
+    }
+
+    /// <summary>
+    /// Replaces an existing modifier with a new one, or adds a new one if it doesn't exist yet.
+    /// </summary>
+    /// <param name="modifier">The SystemModifier to add or replace.</param>
+    public void ReplaceModifier(SystemModifier modifier) {
+        _modifiers.Replace(modifier);
+        RecalculateStat(modifier.stat);
+    }
     ///<summary>
-     ///Recalculates the specified stat based on the current modifiers.
-     ///</summary>
-    override protected void RecalculateStat(ModifiableStat stat) {
+    ///Recalculates the specified stat based on the current modifiers.
+    ///</summary>
+    private void RecalculateStat(ModifiableStat stat) {
         float multiplier, delta;
         _modifiers.Get(stat, out multiplier, out delta);
 
