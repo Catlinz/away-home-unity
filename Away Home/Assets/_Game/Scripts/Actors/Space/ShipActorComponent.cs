@@ -37,10 +37,9 @@ public class ShipActorComponent : MonoBehaviour {
     void Start () {
 		movement = GetComponent<ShipNavComponent>();
         system = GetComponent<CoreSystemComponent>();
-        StructuralComponent structure = GetComponent<StructuralComponent>();
 
-        if (structure != null && test != null) {
-            structure.InstallModuleIn(structure.GetHardpoint("TEST"), test);
+        if (system != null && test != null) {
+            system.InstallModuleIn(system.GetHardpoint("TEST"), test);
         }
        
         // Add the handlers for the computer system.
