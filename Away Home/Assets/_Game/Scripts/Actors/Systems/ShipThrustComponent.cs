@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(CoreSystemComponent))]
-public class ShipThrustComponent : MonoBehaviour, ISystem {
+public class ShipThrustComponent : SystemComponent {
 
     #region PUBLIC FIELDS
     [Header("Thrust")]
@@ -27,10 +27,7 @@ public class ShipThrustComponent : MonoBehaviour, ISystem {
 	#endregion
 
 	#region PRIVATE FIELDS
-	/** The list of modifiers applied to the system. */
-    private SystemModifierList _modifiers;
-
-	/** A reference to the StructuralComponent, for the mass. */
+	/** A reference to the CoreSystemComponent, for the mass. */
 	private CoreSystemComponent _system;
     #endregion
 
@@ -49,29 +46,35 @@ public class ShipThrustComponent : MonoBehaviour, ISystem {
 	public float RotationalAcceleration(float percentThrust) {
 		return (maneuveringThrust * percentThrust) / ((_system.mass * 0.0833333f) * (_system.width * _system.width + _system.length * _system.length));
 	}
-	#endregion
+    #endregion
 
     #region INTERFACE METHODS
-    public void AddModifier(SystemModifier modifier) {
-        _modifiers.Add(modifier);
-        RecalculateStat(modifier.stat);
-    }
+    ///<summary>
+    ///Recalculates the specified stat based on the current modifiers.
+    ///</summary>
+    override protected void RecalculateStat(ModifiableStat stat) {
+        float multiplier, delta;
+        _modifiers.Get(stat, out multiplier, out delta);
 
-    public void RemoveModifier(SystemModifier modifier) {
-        // TODO Fill this in.
-        if (_modifiers.Remove(modifier)) {
-            RecalculateStat(modifier.stat);
+        switch (stat) {
+            case ModifiableStat.Thrust:
+                thrust.added = delta;
+                thrust.modifier = multiplier;
+                break;
+            case ModifiableStat.ManeuveringThrust:
+                maneuveringThrust.added = delta;
+                maneuveringThrust.modifier = multiplier;
+                break;
+            default:
+                break;
         }
-    }
 
-    public void ReplaceModifier(SystemModifier modifier) {
-        _modifiers.Replace(modifier);
-        RecalculateStat(modifier.stat);
+        // TODO Implement the OverclockDamage modifier.
     }
-	#endregion
+    #endregion
 
     #region UNITY HOOKS
-	// Initialize empty SystemModifierList.
+    // Initialize empty SystemModifierList.
     void Awake() {
         _modifiers = new SystemModifierList(2);
     }
@@ -80,30 +83,5 @@ public class ShipThrustComponent : MonoBehaviour, ISystem {
 	void Start() {
         _system = gameObject.GetComponent<CoreSystemComponent>();
 	}
-    #endregion
-
-	#region PRIVATE_METHODS
-    ///<summary>
-    ///Recalculates the specified stat based on the current modifiers.
-    ///</summary>
-    private void RecalculateStat(ModifiableStat stat) {
-        float multiplier, delta;
-        _modifiers.Get(stat, out multiplier, out delta);
-
-        switch (stat) {
-			case ModifiableStat.Thrust:
-				thrust.added = delta;
-				thrust.modifier = multiplier;
-				break;
-			case ModifiableStat.ManeuveringThrust:
-				maneuveringThrust.added = delta;
-				maneuveringThrust.modifier = multiplier;
-				break;
-            default:
-                break;
-        }
-
-        // TODO Implement the OverclockDamage modifier.
-    }
     #endregion
 }

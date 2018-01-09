@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CoreSystemComponent : MonoBehaviour, ISystem {
+public class CoreSystemComponent : SystemComponent {
 
     #region FIELDS
     [Header("Mass")]
@@ -24,8 +24,6 @@ public class CoreSystemComponent : MonoBehaviour, ISystem {
     public PowerSystem power;
     ///<summary>The computer system</summary>
     public ComputerSystem computer;
-
-    private SystemModifierList _modifiers;
 
     [Header("Setup")]
     /** The list of hardpoints for Targeted types of modules. */
@@ -294,23 +292,34 @@ public class CoreSystemComponent : MonoBehaviour, ISystem {
     #endregion
 
     #region  INTERFACE METHODS
-    public void AddModifier(SystemModifier modifier) {
-        _modifiers.Add(modifier);
-        RecalculateStat(modifier.stat);
-    }
+    ///<summary>
+     ///Recalculates the specified stat based on the current modifiers.
+     ///</summary>
+    override protected void RecalculateStat(ModifiableStat stat) {
+        float multiplier, delta;
+        _modifiers.Get(stat, out multiplier, out delta);
 
-    public void RemoveModifier(SystemModifier modifier) {
-        // TODO Fill this in.
-        if (_modifiers.Remove(modifier)) {
-            RecalculateStat(modifier.stat);
+        switch (stat) {
+            case ModifiableStat.ComputerResources:
+                computer.SetTotalCpu(delta, multiplier);
+                break;
+            case ModifiableStat.EnergyRecharge:
+                power.SetEnergyRecharge(delta, multiplier);
+                break;
+            case ModifiableStat.EnergyCapacity:
+                power.SetEnergyCapacity(delta, multiplier);
+                break;
+            case ModifiableStat.Mass:
+                mass.added = (int)delta;
+                mass.modifier = multiplier;
+                break;
+            default:
+                break;
         }
-    }
 
-    public void ReplaceModifier(SystemModifier modifier) {
-        _modifiers.Replace(modifier);
-        RecalculateStat(modifier.stat);
+        // TODO Implement the OverclockDamage modifier.
     }
-	#endregion
+    #endregion
 
     #region HOOKS
     void Awake() {
@@ -348,32 +357,6 @@ public class CoreSystemComponent : MonoBehaviour, ISystem {
         }
     }
 
-    ///<summary>
-    ///Recalculates the specified stat based on the current modifiers.
-    ///</summary>
-    private void RecalculateStat(ModifiableStat stat) {
-        float multiplier, delta;
-        _modifiers.Get(stat, out multiplier, out delta);
-
-        switch (stat) {
-            case ModifiableStat.ComputerResources:
-                computer.SetTotalCpu(delta, multiplier);
-                break;
-            case ModifiableStat.EnergyRecharge:
-                power.SetEnergyRecharge(delta, multiplier);
-                break;
-            case ModifiableStat.EnergyCapacity:
-                power.SetEnergyCapacity(delta, multiplier);
-                break;
-            case ModifiableStat.Mass:
-                mass.added = (int)delta;
-                mass.modifier = multiplier;
-                break;
-            default:
-                break;
-        }
-
-        // TODO Implement the OverclockDamage modifier.
-    }
+    
     #endregion
 }

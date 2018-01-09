@@ -17,7 +17,7 @@ public class ComputerSystem {
     public event ResourcesChanged onResourcesChanged;
 
     /// <summary>Event generated when the system takes damage.</summary>
-    public event SystemDamaged onDamaged;
+    public event SystemComponent.Damaged onDamaged;
 
     /// <summary>The amount of CPU resources given by the system.</summary>
     public ModifiableFloat totalResources;

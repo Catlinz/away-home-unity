@@ -17,7 +17,7 @@ public class PowerSystem {
     public event EnergyChanged onEnergyChanged;
 
     /// <summary>Event generated when the system takes damage.</summary>
-    public event SystemDamaged onDamaged;
+    public event SystemComponent.Damaged onDamaged;
 
     /// <summary>The max energy the system can store.</summary>
     public ModifiableFloat energyCapacity;
