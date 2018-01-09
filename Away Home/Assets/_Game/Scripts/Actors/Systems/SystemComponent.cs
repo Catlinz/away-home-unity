@@ -36,7 +36,7 @@ public class SystemComponent : MonoBehaviour {
 
     #region SYSTEM CONTROL
     public virtual OperationResult Activate() {
-
+        return OperationResult.Fail("Not implemented");
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class SystemComponent : MonoBehaviour {
     }
 
     public virtual OperationResult Deactivate() {
-
+        return OperationResult.OK("Not implemented");
     }
     #endregion
 
