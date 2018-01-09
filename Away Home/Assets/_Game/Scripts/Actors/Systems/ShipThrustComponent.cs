@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(StructuralComponent))]
+[RequireComponent(typeof(CoreSystemComponent))]
 public class ShipThrustComponent : MonoBehaviour, ISystem {
 
     #region PUBLIC FIELDS
@@ -17,12 +17,12 @@ public class ShipThrustComponent : MonoBehaviour, ISystem {
 	#region PUBLIC PROPERTIES
 	/// <summary>The max velocity based on the mass and thrust.</summary>
 	public float MaxVelocity {
-		get { return thrust / structure.mass * Units.ThrustToMaxVel; }
+		get { return thrust / _system.mass * Units.ThrustToMaxVel; }
 	}
 
 	/// <summary>The max rotational velocity based on the mass and the thrust.</summary>
 	public float MaxRotationalVelocity {
-		get { return maneuveringThrust / structure.mass * Units.ThrustToMaxVel; }
+		get { return maneuveringThrust / _system.mass * Units.ThrustToMaxVel; }
 	}
 	#endregion
 
@@ -31,23 +31,23 @@ public class ShipThrustComponent : MonoBehaviour, ISystem {
     private SystemModifierList _modifiers;
 
 	/** A reference to the StructuralComponent, for the mass. */
-	private StructuralComponent structure;
+	private CoreSystemComponent _system;
     #endregion
 
 	#region PUBLIC METHODS
 	/// <summary>Returns the accleration for the given percentage of current thrust [0-1].</summary>
 	public float Acceleration(float percentThrust) {
-		return (thrust * percentThrust) / structure.mass;
+		return (thrust * percentThrust) / _system.mass;
 	}
 
 	/// <summary>Returns the lateral acceleration for the given percentage of current thrust [0-1].</summary>
 	public float LateralAcceleration(float percentThrust) {
-		return (maneuveringThrust * 2 * percentThrust) / structure.mass; 
+		return (maneuveringThrust * 2 * percentThrust) / _system.mass; 
 	}
 
 	/// <summary>Returns the rotational acceleration for the percentage of current thrust [0-1].</summary>
 	public float RotationalAcceleration(float percentThrust) {
-		return (maneuveringThrust * percentThrust) / ((structure.mass * 0.0833333f) * (structure.width * structure.width + structure.length * structure.length));
+		return (maneuveringThrust * percentThrust) / ((_system.mass * 0.0833333f) * (_system.width * _system.width + _system.length * _system.length));
 	}
 	#endregion
 
@@ -78,7 +78,7 @@ public class ShipThrustComponent : MonoBehaviour, ISystem {
 
 	// Get the StructuralComponent, we need it for the mass calculations.
 	void Start() {
-		structure = gameObject.GetComponent<StructuralComponent>();
+        _system = gameObject.GetComponent<CoreSystemComponent>();
 	}
     #endregion
 
