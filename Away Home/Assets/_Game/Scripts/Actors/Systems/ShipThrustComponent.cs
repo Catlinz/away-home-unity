@@ -50,6 +50,10 @@ public class ShipThrustComponent : SystemComponent {
         maneuveringThrust.modifier = 0f;
         return OperationResult.OK();
     }
+
+    protected override void SystemStart() {
+        SystemDeactivate();
+    }
     #endregion
 
     #region PUBLIC METHODS

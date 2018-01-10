@@ -129,6 +129,13 @@ public class SystemComponent : MonoBehaviour {
     protected virtual OperationResult SystemDeactivate() {
         return OperationResult.OK();
     }
+
+    /// <summary>
+    /// Virtual method for system to use for custom Start() 
+    /// behaviour.  Called before any attempt to activate the 
+    /// system.
+    /// </summary>
+    protected virtual void SystemStart() {}
     #endregion
 
     #region MODIFIERS
@@ -179,6 +186,8 @@ public class SystemComponent : MonoBehaviour {
     /// </summary>
     private void Start() {
         _sys = GetComponent<CoreSystemComponent>();
+
+        SystemStart();
 
         // Try and activate the system on start it autoEnable is true.
         if (autoEnable) {
