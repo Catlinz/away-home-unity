@@ -21,10 +21,11 @@ public class SystemComponent : MonoBehaviour {
     public ModifiableInt powerUsage;
 
     /* The amount of computer resources required by the system when active */
-    public ModifiableInt computerUsage;
+    public ModifiableInt cpuUsage;
 
     protected SystemModifierList _modifiers;
     protected CoreSystemComponent _sys;
+    protected bool _isActive = false;
     #endregion
 
     #region PROPERTIES
@@ -35,8 +36,47 @@ public class SystemComponent : MonoBehaviour {
     #endregion
 
     #region SYSTEM CONTROL
-    public virtual OperationResult Activate() {
-        return OperationResult.Fail("Not implemented");
+    /// <summary>
+    /// Try and activate the system by allocating resources and 
+    /// calling the virtual SystemActivate() method.  
+    /// </summary>
+    public OperationResult Activate() {
+        if (CanActivate()) {
+            // Activate the system by reserving resources.
+            _isActive = true;
+            _sys.power.Reserve(powerUsage);
+            _sys.computer.AllocateCpu(cpuUsage);
+            // Do any other initialization for the System.
+            OperationResult activated = SystemActivate();
+
+            // If the System failed to activate properly, deallocate 
+            // the allocated resources.
+            if (activated != OperationResult.Status.OK) {
+                _sys.power.Free(powerUsage);
+                _sys.computer.DeallocateCpu(cpuUsage);
+                _isActive = false;
+            }
+            return activated;
+        }
+        else {
+            // If autoEnable is true, then we want to listen for gained resources to 
+            // try and enable the system again.
+            if (autoEnable) {
+                _sys.power.onEnergyChanged += Handle_onResourcesChanged;
+                _sys.computer.onResourcesChanged += Handle_onResourcesChanged;
+            }
+            return OperationResult.Fail("Not enough resources to activate system");
+        }
+        
+    }
+
+    private void Handle_onResourcesChanged(float energy) {
+        if (CanActivate()) {
+            if (_isActive || Activate() == OperationResult.Status.OK) {
+                _sys.power.onEnergyChanged -= Handle_onResourcesChanged;
+                _sys.computer.onResourcesChanged -= Handle_onResourcesChanged;
+            }
+        }
     }
 
     /// <summary>
@@ -44,11 +84,50 @@ public class SystemComponent : MonoBehaviour {
     /// </summary>
     public bool CanActivate() {
         return _sys.power.FreeEnergy >= powerUsage &&
-               _sys.computer.IdleResources >= computerUsage;
+               _sys.computer.IdleResources >= cpuUsage;
     }
 
-    public virtual OperationResult Deactivate() {
-        return OperationResult.OK("Not implemented");
+    /// <summary>
+    /// Deactivates the system by calling SystemDeactivate() then 
+    /// freeing the allocated resources.
+    /// </summary>
+    public OperationResult Deactivate() {
+        if (_isActive) {
+            OperationResult result = SystemDeactivate();
+            _sys.power.Free(powerUsage);
+            _sys.computer.DeallocateCpu(cpuUsage);
+            _isActive = false;
+
+            // If autoEnable is true, then we want to try and enable the system when 
+            // there is enough resources.
+            if (autoEnable) {
+                _sys.power.onEnergyChanged += Handle_onResourcesChanged;
+                _sys.computer.onResourcesChanged += Handle_onResourcesChanged;
+            }
+            return result;
+        }
+        else {
+            return OperationResult.Partial("System already deactivated");
+        }
+    }
+
+    /// <summary>
+    /// Virtual method for system to use for custom setup on activation.  
+    /// Is called after resources are allocated.  
+    /// 
+    /// Returning a result other than OK is considered a failure and will result in the 
+    /// resources being deallocated again.
+    /// </summary>
+    protected virtual OperationResult SystemActivate() {
+        return OperationResult.OK();
+    }
+
+    /// <summary>
+    /// Virtual method for system to use for custom deactivation.
+    /// Is called before resources are deallocated.
+    /// </summary>
+    protected virtual OperationResult SystemDeactivate() {
+        return OperationResult.OK();
     }
     #endregion
 
@@ -59,7 +138,9 @@ public class SystemComponent : MonoBehaviour {
     /// <param name="modifier">The SystemModifier to add.</param>
     public virtual void AddModifier(SystemModifier modifier) {
         _modifiers.Add(modifier);
-        RecalculateStat(modifier.stat);
+        if (_isActive) {
+            RecalculateStat(modifier.stat);
+        }
     }
 
     /// <summary>
@@ -67,7 +148,7 @@ public class SystemComponent : MonoBehaviour {
     /// </summary>
     /// <param name="modifier">The ISystemModifier to remove.  Uses Equals().</param>
     public virtual void RemoveModifier(SystemModifier modifier) {
-        if (_modifiers.Remove(modifier)) {
+        if (_modifiers.Remove(modifier) && _isActive) {
             RecalculateStat(modifier.stat);
         }
     }
@@ -78,7 +159,9 @@ public class SystemComponent : MonoBehaviour {
     /// <param name="modifier">The SystemModifier to add or replace.</param>
     public virtual void ReplaceModifier(SystemModifier modifier) {
         _modifiers.Replace(modifier);
-        RecalculateStat(modifier.stat);
+        if (_isActive) {
+            RecalculateStat(modifier.stat);
+        }
     }
 
     ///<summary>
@@ -96,6 +179,11 @@ public class SystemComponent : MonoBehaviour {
     /// </summary>
     private void Start() {
         _sys = GetComponent<CoreSystemComponent>();
+
+        // Try and activate the system on start it autoEnable is true.
+        if (autoEnable) {
+            Activate();
+        }
     }
     #endregion
 }

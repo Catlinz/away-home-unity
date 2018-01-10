@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(CoreSystemComponent))]
 public class ShipThrustComponent : SystemComponent {
 
-    #region PUBLIC FIELDS
+    #region FIELDS
     [Header("Thrust")]
 	/// <summary>The amount of thrust produced by the engine (Newtons).</summary>
 	public ModifiableFloat thrust;
@@ -14,21 +14,47 @@ public class ShipThrustComponent : SystemComponent {
 	public ModifiableFloat maneuveringThrust;
     #endregion
 
-	#region PUBLIC PROPERTIES
+	#region PROPERTIES
 	/// <summary>The max velocity based on the mass and thrust.</summary>
 	public float MaxVelocity {
-		get { return thrust / _sys.mass * Units.ThrustToMaxVel; }
+		get {
+            return thrust / _sys.mass * Units.ThrustToMaxVel;
+        }
 	}
 
 	/// <summary>The max rotational velocity based on the mass and the thrust.</summary>
 	public float MaxRotationalVelocity {
-		get { return maneuveringThrust / _sys.mass * Units.ThrustToMaxVel; }
+		get {
+            return maneuveringThrust / _sys.mass * Units.ThrustToMaxVel;
+        }
 	}
-	#endregion
+    #endregion
 
-	#region PUBLIC METHODS
-	/// <summary>Returns the accleration for the given percentage of current thrust [0-1].</summary>
-	public float Acceleration(float percentThrust) {
+    #region SYSTEM CONTROL
+    /// <summary>
+    /// Make sure to recalculate all the stats when the system is activated.
+    /// </summary>
+    protected override OperationResult SystemActivate() {
+        thrust.modifier = 1f;
+        maneuveringThrust.modifier = 1f;
+
+        RecalculateAllStats();
+        return OperationResult.OK();
+    }
+
+    /// <summary>
+    /// Set the stat modifiers to 0 in order to remove all thrust when inactive.
+    /// </summary>
+    protected override OperationResult SystemDeactivate() {
+        thrust.modifier = 0f;
+        maneuveringThrust.modifier = 0f;
+        return OperationResult.OK();
+    }
+    #endregion
+
+    #region PUBLIC METHODS
+    /// <summary>Returns the accleration for the given percentage of current thrust [0-1].</summary>
+    public float Acceleration(float percentThrust) {
 		return (thrust * percentThrust) / _sys.mass;
 	}
 
@@ -43,7 +69,21 @@ public class ShipThrustComponent : SystemComponent {
 	}
     #endregion
 
-    #region INTERFACE METHODS
+    #region MODIFIER METHODS
+    private void RecalculateAllStats() {
+        float multiplier, delta;
+
+        // Recalculate the Thrust
+        _modifiers.Get(ModifiableStat.Thrust, out multiplier, out delta);
+        thrust.added = delta;
+        thrust.modifier = multiplier;
+
+        // Recalculate the Maneuvering Thrust
+        _modifiers.Get(ModifiableStat.ManeuveringThrust, out multiplier, out delta);
+        maneuveringThrust.added = delta;
+        maneuveringThrust.modifier = multiplier;
+
+    }
     ///<summary>
     ///Recalculates the specified stat based on the current modifiers.
     ///</summary>
