@@ -18,14 +18,14 @@ public class ShipThrustComponent : SystemComponent {
 	/// <summary>The max velocity based on the mass and thrust.</summary>
 	public float MaxVelocity {
 		get {
-            return thrust / _sys.mass * Units.ThrustToMaxVel;
+            return thrust / _core.mass * Units.ThrustToMaxVel;
         }
 	}
 
 	/// <summary>The max rotational velocity based on the mass and the thrust.</summary>
 	public float MaxRotationalVelocity {
 		get {
-            return maneuveringThrust / _sys.mass * Units.ThrustToMaxVel;
+            return maneuveringThrust / _core.mass * Units.ThrustToMaxVel;
         }
 	}
     #endregion
@@ -59,17 +59,17 @@ public class ShipThrustComponent : SystemComponent {
     #region PUBLIC METHODS
     /// <summary>Returns the accleration for the given percentage of current thrust [0-1].</summary>
     public float Acceleration(float percentThrust) {
-		return (thrust * percentThrust) / _sys.mass;
+		return (thrust * percentThrust) / _core.mass;
 	}
 
 	/// <summary>Returns the lateral acceleration for the given percentage of current thrust [0-1].</summary>
 	public float LateralAcceleration(float percentThrust) {
-		return (maneuveringThrust * 2 * percentThrust) / _sys.mass; 
+		return (maneuveringThrust * 2 * percentThrust) / _core.mass; 
 	}
 
 	/// <summary>Returns the rotational acceleration for the percentage of current thrust [0-1].</summary>
 	public float RotationalAcceleration(float percentThrust) {
-		return (maneuveringThrust * percentThrust) / ((_sys.mass * 0.0833333f) * (_sys.width * _sys.width + _sys.length * _sys.length));
+		return (maneuveringThrust * percentThrust) / ((_core.mass * 0.0833333f) * (_core.width * _core.width + _core.length * _core.length));
 	}
     #endregion
 

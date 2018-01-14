@@ -24,7 +24,8 @@ public class SystemComponent : MonoBehaviour {
     public ModifiableInt cpuUsage;
 
     protected SystemModifierList _modifiers;
-    protected CoreSystemComponent _sys;
+    protected CoreSystemComponent _core;
+
     protected bool _isActive = false;
     #endregion
 
@@ -32,6 +33,10 @@ public class SystemComponent : MonoBehaviour {
     /// <summary>Can the System component be manually triggered?</summary>
     public virtual bool IsTriggerable {
         get { return false; }
+    }
+    /// <summary>Is the system currently online?</summary>
+    public bool IsOnline {
+        get { return _isActive; }
     }
     #endregion
 
@@ -44,47 +49,32 @@ public class SystemComponent : MonoBehaviour {
         if (CanActivate()) {
             // Activate the system by reserving resources.
             _isActive = true;
-            _sys.power.Reserve(powerUsage);
-            _sys.computer.AllocateCpu(cpuUsage);
+            _core.power.Reserve(powerUsage);
+            _core.computer.AllocateCpu(cpuUsage);
             // Do any other initialization for the System.
             OperationResult activated = SystemActivate();
 
             // If the System failed to activate properly, deallocate 
             // the allocated resources.
             if (activated != OperationResult.Status.OK) {
-                _sys.power.Free(powerUsage);
-                _sys.computer.DeallocateCpu(cpuUsage);
+                _core.power.Free(powerUsage);
+                _core.computer.DeallocateCpu(cpuUsage);
                 _isActive = false;
             }
             return activated;
         }
         else {
-            // If autoEnable is true, then we want to listen for gained resources to 
-            // try and enable the system again.
-            if (autoEnable) {
-                _sys.power.onEnergyChanged += Handle_onResourcesChanged;
-                _sys.computer.onResourcesChanged += Handle_onResourcesChanged;
-            }
             return OperationResult.Fail("Not enough resources to activate system");
         }
         
-    }
-
-    private void Handle_onResourcesChanged(float energy) {
-        if (CanActivate()) {
-            if (_isActive || Activate() == OperationResult.Status.OK) {
-                _sys.power.onEnergyChanged -= Handle_onResourcesChanged;
-                _sys.computer.onResourcesChanged -= Handle_onResourcesChanged;
-            }
-        }
     }
 
     /// <summary>
     /// Returns true if the system has enough power and CPU to be activated.
     /// </summary>
     public bool CanActivate() {
-        return _sys.power.FreeEnergy >= powerUsage &&
-               _sys.computer.IdleResources >= cpuUsage;
+        return _core.power.FreeEnergy >= powerUsage &&
+               _core.computer.IdleResources >= cpuUsage;
     }
 
     /// <summary>
@@ -94,16 +84,10 @@ public class SystemComponent : MonoBehaviour {
     public OperationResult Deactivate() {
         if (_isActive) {
             OperationResult result = SystemDeactivate();
-            _sys.power.Free(powerUsage);
-            _sys.computer.DeallocateCpu(cpuUsage);
+            _core.power.Free(powerUsage);
+            _core.computer.DeallocateCpu(cpuUsage);
             _isActive = false;
 
-            // If autoEnable is true, then we want to try and enable the system when 
-            // there is enough resources.
-            if (autoEnable) {
-                _sys.power.onEnergyChanged += Handle_onResourcesChanged;
-                _sys.computer.onResourcesChanged += Handle_onResourcesChanged;
-            }
             return result;
         }
         else {
@@ -185,14 +169,13 @@ public class SystemComponent : MonoBehaviour {
     /// Automatically grab the core system component.
     /// </summary>
     private void Start() {
-        _sys = GetComponent<CoreSystemComponent>();
+        _core = GetComponent<CoreSystemComponent>();
 
+        // Called before component is registered.
         SystemStart();
 
-        // Try and activate the system on start it autoEnable is true.
-        if (autoEnable) {
-            Activate();
-        }
+        // Register the system with the CoreSystemComponent
+        _core.systems.Register(this);
     }
     #endregion
 }

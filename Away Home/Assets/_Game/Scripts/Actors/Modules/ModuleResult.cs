@@ -13,9 +13,14 @@ public enum ModuleResult {
 
 	InvalidAsset,
 	InvalidSystem,
+	InvalidHardpoint,
 
 	InsufficientCpu,
 	InsufficientPower,
 
+	IncompatibleSocket,
+	HardpointNotEmpty,
+
+	NoModule,
     NotImplemented
 }

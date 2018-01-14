@@ -139,7 +139,7 @@ public class ShipActorInspector : Editor {
         shipRot = (Tools.pivotRotation == PivotRotation.Local) ? shipTx.rotation : Quaternion.identity;
 
         CoreSystemComponent system = ship.GetComponent<CoreSystemComponent>();
-        Hardpoint[] hardpoints = system.GetAllHardpoints();;
+        Hardpoint[] hardpoints = system.hardpoints.GetAll();
 		for (int i = 0; i < hardpoints.Length; ++i) {
 			SceneGUIHandleSocket(ref hardpoints[i]);
         }

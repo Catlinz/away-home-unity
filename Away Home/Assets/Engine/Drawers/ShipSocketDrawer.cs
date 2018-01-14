@@ -43,11 +43,9 @@ public class ShipSocketDrawer : PropertyDrawer {
         EditorGUI.indentLevel += 1;
 
         Rect rect = new Rect(position);
-        EditorGUI.PropertyField(rect, property.FindPropertyRelative("socketName"), GUIContent.none);
+        EditorGUI.PropertyField(rect, property.FindPropertyRelative("name"), GUIContent.none);
         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
-        EditorGUI.PropertyField(rect, property.FindPropertyRelative("maxCpuBandwidth"));
-        rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
-		EditorGUI.PropertyField(rect, property.FindPropertyRelative("maxEnergyOutput"));
+        EditorGUI.PropertyField(rect, property.FindPropertyRelative("socket"));
         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
         EditorGUI.PropertyField(rect, property.FindPropertyRelative("arcLimits"));
         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;

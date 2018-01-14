@@ -39,7 +39,7 @@ public class ShipActorComponent : MonoBehaviour {
         system = GetComponent<CoreSystemComponent>();
 
         if (system != null && test != null) {
-            system.InstallModuleIn(system.GetHardpoint("TEST"), test);
+            system.InstallModuleIn(system.hardpoints.Get("TEST"), test);
         }
        
         // Add the handlers for the computer system.

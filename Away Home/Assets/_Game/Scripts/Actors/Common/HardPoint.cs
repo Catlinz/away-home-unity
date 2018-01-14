@@ -69,16 +69,16 @@ public class Hardpoint
     public string name;
 
     /// <summary>The socket type of the hardpoint.  Restricts what can go into it.</summary>
-    public HPSocket socket;
+    public HPSocket socket = HPSocket.None;
 
     /// <summary>The yaw and pitch limits for a turret in this hardpoint (if it supports turrets).</summary>
     public TurretArc arcLimits;
 
     /// <summary>The position of the hardpoint relative to the actor.</summary>
     [Header("Transform")]
-	public Vector3 position;
+	public Vector3 position = Vector3.zero;
     /// <summary>The rotation of the hardpoint relative to the actor.</summary>
-	public Quaternion rotation;
+	public Quaternion rotation = Quaternion.identity;
 
     /// <summary>The module that is current installed in the socket (if any).</summary>
     public ActorModule Module { get { return module;  } }
@@ -95,10 +95,7 @@ public class Hardpoint
     /// <summary>Default constructor</summary>
     public Hardpoint() {
         name = null;
-        socket = HPSocket.None;
         arcLimits = new TurretArc(45, 45, 45, 0);
-        position = Vector3.zero;
-        rotation = Quaternion.identity;
         module = null;
     }
 
