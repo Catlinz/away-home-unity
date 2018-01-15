@@ -24,7 +24,7 @@ public class SystemComponent : MonoBehaviour {
     public ModifiableInt cpuUsage;
 
     protected SystemModifierList _modifiers;
-    protected CoreSystemComponent _core;
+    protected MechaCoreComponent _core;
 
     protected bool _isActive = false;
     #endregion
@@ -169,7 +169,7 @@ public class SystemComponent : MonoBehaviour {
     /// Automatically grab the core system component.
     /// </summary>
     private void Start() {
-        _core = GetComponent<CoreSystemComponent>();
+        _core = GetComponent<MechaCoreComponent>();
 
         // Called before component is registered.
         SystemStart();

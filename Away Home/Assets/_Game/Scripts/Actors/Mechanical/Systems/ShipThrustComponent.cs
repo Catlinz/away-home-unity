@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(CoreSystemComponent))]
+[RequireComponent(typeof(MechaCoreComponent))]
 public class ShipThrustComponent : SystemComponent {
 
     #region FIELDS

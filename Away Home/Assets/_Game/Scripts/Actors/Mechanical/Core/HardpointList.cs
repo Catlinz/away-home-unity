@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class HardpointList {
+public class HardpointConfiguration {
 
-	[Header("Setup")]
+    #region FIELDS
+    [Header("Setup")]
     /** The list of hardpoints for Targeted types of modules. */
     public Hardpoint[] targeted;
 
@@ -18,13 +19,37 @@ public class HardpointList {
     /** The list of hardpoints for structural types of modules. */
     public Hardpoint[] structures;
 
-	/// <summary>
+    /// <summary>Are there any active modules?</summary>
+    public bool HasActiveModules {
+        get { return _totalActive > 0; }
+    }
+
+    /// <summary>Are there any modules that have been disabled by something other than the user?</summary>
+    public bool HasAutoDisabledModules {
+        get { return _autoDisabled > 0; }
+    }
+
+    private System.Random _rand = new System.Random();
+
+    private int _totalActive = 0;
+    private int _autoDisabled = 0;
+    #endregion
+
+    #region EVENTS
+    /// <summary>Event that is triggered when a change to a module occurs.</summary>
+    public ActorModule.StatusChanged onChange;
+    #endregion
+
+    /// <summary>
     /// Do some checks before installing a module in a hardpoint to make sure
     /// that we can actually install it.
     /// </summary>
     public ModuleResult CanInstallModuleInto(Hardpoint hardpoint, GameObject prefab) {
         if (!hardpoint.IsEmpty) {
 			return ModuleResult.HardpointNotEmpty;
+        }
+        if (prefab == null) {
+            return ModuleResult.NoModule;
         }
 
         ActorModule module = prefab.GetComponent<ActorModule>();
@@ -47,7 +72,7 @@ public class HardpointList {
 	/// <summary>
 	/// Try and disable the module in the specified hardpoint.
 	/// </summary>
-	public ModuleResult DisableModuleIn(Hardpoint hardpoint) {
+	public ModuleResult DisableModuleIn(Hardpoint hardpoint, ActorModule.DisabledReason reason = ActorModule.DisabledReason.User) {
 		if (hardpoint.IsEmpty) {
 			return ModuleResult.NoModule;
 		}
@@ -55,9 +80,30 @@ public class HardpointList {
 			return ModuleResult.AlreadyDisabled;
 		}
 		else {
-			return hardpoint.Module.DisableModule();
+            ModuleResult result = hardpoint.Module.DisableModule(reason);
+            if (result == ModuleResult.Success) {
+                --_totalActive;
+                if (reason == ActorModule.DisabledReason.ResourceLoss) {
+                    ++_autoDisabled;
+                }
+                if (onChange != null) {
+                    onChange(ActorModule.Change.Disabled, hardpoint.Module);
+                }
+            }
 		}
 	}
+
+    /// <summary>
+    /// Try and disable a random module.  It will try and disable the more resource hungry ones first,
+    /// then move onto the other ones.  It will return true once it has disabled one, or false if there 
+    /// were none to disable.
+    /// </summary>
+    public bool DisableRandomModule() {
+        return (DisableRandomModuleInArray(targeted) ||
+                DisableRandomModuleInArray(utility) ||
+                DisableRandomModuleInArray(passive) ||
+                DisableRandomModuleInArray(structures)); 
+    }
 
 	/// <summary>
 	/// Try and enable the module in the specified hardpoint.
@@ -67,9 +113,30 @@ public class HardpointList {
 			return ModuleResult.NoModule;
 		}
 		else {
-			return hardpoint.Module.EnableModule();
+            ActorModule.DisabledReason disabledReason = hardpoint.Module.DisabledBy;
+
+			ModuleResult res = hardpoint.Module.EnableModule();
+            if (res == ModuleResult.Success) {
+                ++_totalActive;
+                if (disabledReason != ActorModule.DisabledReason.User) {
+                    --_autoDisabled;
+                }
+            }
+            return res;
 		}
 	}
+
+    /// <summary>
+    /// Try and enable a random module that was previously disabled by resource loss.
+    /// Will try and enable lower resource using modules first, then move up to more 
+    /// resource hungry modules.
+    /// </summary>
+    public bool EnableRandomModule() {
+        return (EnableRandomModuleInArray(structures) ||
+                EnableRandomModuleInArray(passive) || 
+                EnableRandomModuleInArray(utility) ||
+                EnableRandomModuleInArray(targeted));
+    }
 
 	/// <summary>
     /// Find and return the Hardpoint by name.
@@ -215,21 +282,42 @@ public class HardpointList {
 	}
 
 	/// <summary>
-	/// Do a pre-install setup and checking to install a module into a hardpoint.
+	/// Register that a module was installed into a hardpoint after the fact.
 	/// </summary>
-	public ModuleResult InstallModuleIn(Hardpoint hardpoint, GameObject prefab) {
-		if (hardpoint == null) {
-			return ModuleResult.InvalidHardpoint;
-		}
-		else if (prefab == null) {
-			return ModuleResult.NoModule;
-		}
-		else {
-			ModuleResult res = CanInstallModuleInto(hardpoint, prefab);
-			if (res == ModuleResult.Success) {
-				// TODO: Do something here.
-			}
-			return res;
-		}
+	public void RegisterModuleIn(Hardpoint hardpoint, ActorModule module) {
+        // TODO: Do something here.
 	}
+
+    private bool DisableRandomModuleInArray(Hardpoint[] hardpoints) {
+        int count = (hardpoints != null) ? hardpoints.Length : 0;
+        if (count > 0) {
+            int index = _rand.Next(0, count);
+            for (int i = 0; i < count; ++i) {
+                if (hardpoints[index].IsOnline) {
+                    DisableModuleIn(hardpoints[index], ActorModule.DisabledReason.ResourceLoss);
+                    return true;
+                }
+
+                index = (index + 1) % count;
+            }
+        }
+        return false;
+    }
+
+    private bool EnableRandomModuleInArray(Hardpoint[] hardpoints) {
+        int count = (hardpoints != null) ? hardpoints.Length : 0;
+        if (count > 0) {
+            int index = _rand.Next(0, count);
+            for (int i = 0; i < count; ++i) {
+                if (hardpoints[index].IsOffline && hardpoints[index].Module.DisabledBy == ActorModule.DisabledReason.ResourceLoss) {
+                    if (EnableModuleIn(hardpoints[index]) == ModuleResult.Success) {
+                        return true;
+                    }
+                }
+
+                index = (index + 1) % count;
+            }
+        }
+        return false;
+    }
 }

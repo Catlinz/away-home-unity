@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CoreSystemComponent : MonoBehaviour {
+public class MechaCoreComponent : MonoBehaviour {
 
     #region FIELDS
     [Header("Mass")]
@@ -27,7 +27,7 @@ public class CoreSystemComponent : MonoBehaviour {
 
     [Header("Hardpoints")]
     /** The list of all the hardpoints. */
-    public HardpointList hardpoints;
+    public HardpointConfiguration hardpoints;
 
     /** The list of all systems on the actor. */
     public SystemList systems = new SystemList();
@@ -95,13 +95,14 @@ public class CoreSystemComponent : MonoBehaviour {
         return InstallModuleIn(hardpoints.Get(hardpointName), prefab);
     }
     public OperationResult InstallModuleIn(Hardpoint hardpoint, GameObject prefab) {
-        ModuleResult res = hardpoints.InstallModuleIn(hardpoint, prefab);
+        ModuleResult res = hardpoints.CanInstallModuleInto(hardpoint, prefab);
         switch (res) {
             case ModuleResult.Success:
                 ActorModule module = ActorModule.Instantiate(prefab, hardpoint, gameObject);
                 if (onModuleChange != null) {
                     onModuleChange(ActorModule.Change.Installed, module);
                 }
+                hardpoints.RegisterModuleIn(hardpoint, module);
                 return EnableModule(hardpoint);
             case ModuleResult.HardpointNotEmpty:
                 return OperationResult.Fail("Selected hardpoint is not empty");
@@ -201,21 +202,25 @@ public class CoreSystemComponent : MonoBehaviour {
     #region HANDLERS
     private void HandleResourcesChanged(float upOrDown) {
         if (upOrDown > 0) {
+            // Try and enable any auto disabled systems.
             while (systems.HasDisabledAuto) {
                 if (!systems.EnableRandom()) { break; }
             }
             
-            //TODO: Then try and enable any disabled modules.
+            // Then try and enable any auto disabled modules.
+            while (hardpoints.HasAutoDisabledModules) {
+                if (!hardpoints.EnableRandomModule()) { break; }
+            }
         }
         else {
             // First, try disabling random modules until we are back in positive
             // resources.
-            while (power.FreeEnergy < 0 || computer.IdleResources < 0) {
-                // TODO: Disable random modules.
+            while ((power.FreeEnergy < 0 || computer.IdleResources < 0) && hardpoints.HasActiveModules) {
+                if (!hardpoints.DisableRandomModule()) { break; }
             }
 
             // If still don't have enough resources, then try disabling systems
-            while (power.FreeEnergy < 0 || computer.IdleResources < 0) {
+            while ((power.FreeEnergy < 0 || computer.IdleResources < 0)) {
                 if (!systems.DisableRandom()) { break; }
             }
         }

@@ -152,7 +152,7 @@ public class ConsoleService {
         if (obj) {
             GameObject prefab = (GameObject)AssetDatabase.LoadAssetAtPath(assetPath, typeof(GameObject));
             if (prefab != null) {
-                OperationResult result = obj.GetComponent<CoreSystemComponent>().InstallModuleIn(socketName, prefab);
+                OperationResult result = obj.GetComponent<MechaCoreComponent>().InstallModuleIn(socketName, prefab);
                 if (result.status != OperationResult.Status.OK) {
                     AppendLogLine(result.message);
                 }

@@ -14,7 +14,7 @@ using UnityEngine;
 [RequireComponent(typeof(ShipNavComponent))]
 public class ShipActorComponent : MonoBehaviour {
 
-    public CoreSystemComponent system;
+    public MechaCoreComponent system;
 
     public ShipNavComponent movement;
 
@@ -36,7 +36,7 @@ public class ShipActorComponent : MonoBehaviour {
     // Use this for initialization
     void Start () {
 		movement = GetComponent<ShipNavComponent>();
-        system = GetComponent<CoreSystemComponent>();
+        system = GetComponent<MechaCoreComponent>();
 
         if (system != null && test != null) {
             system.InstallModuleIn(system.hardpoints.Get("TEST"), test);

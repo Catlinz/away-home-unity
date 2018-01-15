@@ -84,7 +84,25 @@ public class Hardpoint
     public ActorModule Module { get { return module;  } }
 
     /// <summary>Whether or not the hardpoint has a module.</summary>
-    public bool IsEmpty { get { return module == null; } }
+    public bool IsEmpty {
+        get {
+            return module == null;
+        }
+    }
+
+    /// <summary>Is there an offline module installed into the hardpoint?</summary>
+    public bool IsOffline {
+        get {
+            return (module != null && !module.IsEnabled);
+        }
+    }
+
+    /// <summary>Is there a online module installed into the hardpoint?</summary>
+    public bool IsOnline {
+        get {
+            return (module != null && module.IsEnabled);
+        }
+    }
 
     /// <summary>The module that is currently installed in the socket (if any).</summary>
     private ActorModule module;

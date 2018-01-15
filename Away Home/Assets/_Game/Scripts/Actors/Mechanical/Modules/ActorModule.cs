@@ -10,6 +10,7 @@ public class ActorModule : MonoBehaviour {
 	#region TYPES
 	public enum RemovalReason { Uninstalled, Destroyed };
 	public enum Change { Installed, Uninstalled, Enabled, Disabled, Destroyed};
+    public enum DisabledReason { NotDisabled, User, ResourceLoss, Damage };
 
 	public delegate void StatusChanged(Change change, ActorModule module);
 	#endregion
@@ -28,14 +29,20 @@ public class ActorModule : MonoBehaviour {
     public bool IsEnabled {
         get { return isEnabled; }
     }
+
+    public DisabledReason DisabledBy {
+        get { return _disabledBy; }
+    }
     #endregion
 
     #region PROTECTED FIELDS
 	/// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
-    protected CoreSystemComponent system;
+    protected MechaCoreComponent system;
 
 	/// <summary>A reference to the prefab that instantiated the module.</summary>
 	protected GameObject prefab;
+
+    protected DisabledReason _disabledBy = DisabledReason.User;
 
     /// <summary>Whether or not the module is currently enabled.</summary>
     protected bool isEnabled;
@@ -80,10 +87,18 @@ public class ActorModule : MonoBehaviour {
 	/// </item>
 	/// </list>
 	/// </returns>
-	public virtual ModuleResult DisableModule() {
-		if (!isEnabled) { return ModuleResult.AlreadyDisabled; }
+	public virtual ModuleResult DisableModule(DisabledReason reason = DisabledReason.User) {
+		if (!isEnabled) {
+            // Override any other disabled by reason if the user manually disabled the module, 
+            // so it won't auto re-enable.
+            if (reason == DisabledReason.User) {
+                _disabledBy = reason;
+            }
+            return ModuleResult.AlreadyDisabled;
+        }
 
 		isEnabled = false;
+        _disabledBy = reason;
 		if (system != null) {
             system.computer.DeallocateCpu(idleComputerResources);
             system.power.Free(idleEnergyDrain);
@@ -116,12 +131,13 @@ public class ActorModule : MonoBehaviour {
 	public virtual ModuleResult EnableModule() {
         if (isEnabled) { return ModuleResult.AlreadyEnabled; }
 
-		system = gameObject.GetComponentInParent<CoreSystemComponent>();
+		system = gameObject.GetComponentInParent<MechaCoreComponent>();
 		if (!system) { return ModuleResult.InvalidSystem; }
 
 		if (system.computer.AllocateCpu(idleComputerResources)) {
 			if (system.power.Reserve(idleEnergyDrain)) {
 				isEnabled = true;
+                _disabledBy = DisabledReason.NotDisabled;
 				return ModuleResult.Success;
 			}
 			else { // Not enough power to enable module.
