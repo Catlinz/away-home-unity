@@ -9,10 +9,16 @@ using UnityEngine;
 public class PassiveModule : ActorModule
 {
 
+    #region FIELDS
+    /// <summary>The name of the type of component to apply the modifier to.</summary>
+    public string componentType;
+    #endregion
+
+    #region MODULE METHODS
     /// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
     /// <seealso cref="ActorModule.DisableModule"/>
-    public override ModuleResult DisableModule() {
-		ModuleResult disabled = base.DisableModule();
+    public override ModuleResult DisableModule(DisabledReason reason = DisabledReason.User) {
+		ModuleResult disabled = base.DisableModule(reason);
 		if (disabled == ModuleResult.Success) {
 			return ModuleResult.Success;
 		}
@@ -32,4 +38,5 @@ public class PassiveModule : ActorModule
 			return enabled;
 		}
 	}
+    #endregion
 }

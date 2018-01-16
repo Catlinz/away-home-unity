@@ -13,9 +13,13 @@ public class ActorModule : MonoBehaviour {
     public enum DisabledReason { NotDisabled, User, ResourceLoss, Damage };
 
 	public delegate void StatusChanged(Change change, ActorModule module);
-	#endregion
+    #endregion
 
-    #region PUBLIC FIELDS
+    #region FIELDS
+    [Header("Basic Module")]
+    /// <summary>A human displayable name for the module.</summary>
+    public string moduleName;
+
 	/// <summary>The amount of computer resources consumed by the Module when enabled.</summary>
 	public int idleComputerResources;
 
@@ -27,68 +31,79 @@ public class ActorModule : MonoBehaviour {
 
     /// <summary>Whether or not the Module is currently enabled.</summary>
     public bool IsEnabled {
-        get { return isEnabled; }
+        get { return _isEnabled; }
     }
 
+    /// <summary>Why the module was disabled, if it is disabled.</summary>
     public DisabledReason DisabledBy {
         get { return _disabledBy; }
     }
-    #endregion
 
-    #region PROTECTED FIELDS
 	/// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
-    protected MechaCoreComponent system;
+    protected MechaCoreComponent _core;
 
 	/// <summary>A reference to the prefab that instantiated the module.</summary>
-	protected GameObject prefab;
+	protected GameObject _prefab;
 
     protected DisabledReason _disabledBy = DisabledReason.User;
 
     /// <summary>Whether or not the module is currently enabled.</summary>
-    protected bool isEnabled;
+    protected bool _isEnabled;
     #endregion
 
-	/// <summary>
-	/// Instantiates an instance of a module prefab and installs it into a specified hardpoint on a 
-	/// specified parent GameObject.  The instance of the module component is returned.
-	/// </summary>
-	public static ActorModule Instantiate(GameObject prefab, Hardpoint hardpoint, GameObject parent) {
+    #region LIFECYCLE METHODS
+    /// <summary>
+    /// Instantiates an instance of a module prefab and installs it into a specified hardpoint on a 
+    /// specified parent GameObject.  The instance of the module component is returned.
+    /// </summary>
+    public static ActorModule Instantiate(GameObject prefab, Hardpoint hardpoint, GameObject parent) {
 		GameObject go = GameObject.Instantiate(prefab, parent.transform);
 		ActorModule mod = go.GetComponent<ActorModule>();
-		mod.prefab = prefab;
+		mod._prefab = prefab;
 		mod.InstantiateModule(hardpoint.position, hardpoint.rotation);
 		hardpoint.SetModule(mod);
 		return mod;
 	}
 
-	/// <summary>
-	/// Virtual method that is used to destroy the module.  This method 
-	/// destroys the GameObject the module is attached to and returns 
-	/// a reference to the prefab used to create the module, if any.
+    /// <summary>
+	/// Virtual Instantiate method to setup placing the module on the parent 
+	/// actor, be it a ship or other vehicle.
 	/// </summary>
-	public virtual GameObject DestroyModule() {
-		GameObject prefab = this.prefab;
-		this.prefab = null;
+	public virtual void InstantiateModule(Vector3 relPosition, Quaternion relRotation) {
+        gameObject.transform.localPosition = relPosition;
+        gameObject.transform.localRotation = relRotation;
+    }
 
-		GameObject.Destroy(gameObject);
-		
-		return prefab;
-	}
+    /// <summary>
+    /// Virtual method that is used to destroy the module.  This method 
+    /// destroys the GameObject the module is attached to and returns 
+    /// a reference to the prefab used to create the module, if any.
+    /// </summary>
+    public virtual GameObject DestroyModule() {
+        GameObject prefab = this._prefab;
+        this._prefab = null;
 
+        GameObject.Destroy(gameObject);
+
+        return prefab;
+    }
+    #endregion
+
+    #region MODULE METHODS
     /// <summary>Frees up the Idle CPU and Energy from the ships systems.</summary>
-	/// <returns>
-	/// A <c>ModuleResult</c> to indicate the result of disabling the module.
-	/// <list type="bullet">
-	/// <item>
-	/// <description><c>AlreadyDisabled</c> if the module is already disabled.</description>
-	/// </item>
-	/// <item>
-	/// <description><c>InvalidSystem</c> if the system reference is null already.</description>
-	/// </item>
-	/// </list>
-	/// </returns>
-	public virtual ModuleResult DisableModule(DisabledReason reason = DisabledReason.User) {
-		if (!isEnabled) {
+    /// <returns>
+    /// A <c>ModuleResult</c> to indicate the result of disabling the module.
+    /// <list type="bullet">
+    /// <item>
+    /// <description><c>AlreadyDisabled</c> if the module is already disabled.</description>
+    /// </item>
+    /// <item>
+    /// <description><c>InvalidSystem</c> if the system reference is null already.</description>
+    /// </item>
+    /// </list>
+    /// </returns>
+    public virtual ModuleResult DisableModule(DisabledReason reason = DisabledReason.User) {
+		if (!_isEnabled) {
             // Override any other disabled by reason if the user manually disabled the module, 
             // so it won't auto re-enable.
             if (reason == DisabledReason.User) {
@@ -97,12 +112,12 @@ public class ActorModule : MonoBehaviour {
             return ModuleResult.AlreadyDisabled;
         }
 
-		isEnabled = false;
+        _isEnabled = false;
         _disabledBy = reason;
-		if (system != null) {
-            system.computer.DeallocateCpu(idleComputerResources);
-            system.power.Free(idleEnergyDrain);
-            system = null;
+		if (_core != null) {
+            _core.computer.DeallocateCpu(idleComputerResources);
+            _core.power.Free(idleEnergyDrain);
+            _core = null;
 			return ModuleResult.Success;
 		}
 		else {
@@ -129,35 +144,27 @@ public class ActorModule : MonoBehaviour {
 	/// </list>
 	/// </returns>
 	public virtual ModuleResult EnableModule() {
-        if (isEnabled) { return ModuleResult.AlreadyEnabled; }
+        if (_isEnabled) { return ModuleResult.AlreadyEnabled; }
 
-		system = gameObject.GetComponentInParent<MechaCoreComponent>();
-		if (!system) { return ModuleResult.InvalidSystem; }
+		_core = gameObject.GetComponentInParent<MechaCoreComponent>();
+		if (!_core) { return ModuleResult.InvalidSystem; }
 
-		if (system.computer.AllocateCpu(idleComputerResources)) {
-			if (system.power.Reserve(idleEnergyDrain)) {
-				isEnabled = true;
+		if (_core.computer.AllocateCpu(idleComputerResources)) {
+			if (_core.power.Reserve(idleEnergyDrain)) {
+                _isEnabled = true;
                 _disabledBy = DisabledReason.NotDisabled;
 				return ModuleResult.Success;
 			}
 			else { // Not enough power to enable module.
-                system.computer.DeallocateCpu(idleComputerResources);
-                system = null;
+                _core.computer.DeallocateCpu(idleComputerResources);
+                _core = null;
 				return ModuleResult.InsufficientPower;
 			}
 		}
 		else { // Not enough CPU to enable module.
-            system = null;
+            _core = null;
 			return ModuleResult.InsufficientCpu;
 		}
 	}
-
-	/// <summary>
-	/// Virtual Instantiate method to setup placing the module on the parent 
-	/// actor, be it a ship or other vehicle.
-	/// </summary>
-	public virtual void InstantiateModule(Vector3 relPosition, Quaternion relRotation) {
-		gameObject.transform.localPosition = relPosition;
-		gameObject.transform.localRotation = relRotation;
-	}
+    #endregion
 }

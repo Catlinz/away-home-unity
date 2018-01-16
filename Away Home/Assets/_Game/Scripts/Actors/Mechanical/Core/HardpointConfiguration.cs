@@ -73,6 +73,9 @@ public class HardpointConfiguration {
 	/// Try and disable the module in the specified hardpoint.
 	/// </summary>
 	public ModuleResult DisableModuleIn(Hardpoint hardpoint, ActorModule.DisabledReason reason = ActorModule.DisabledReason.User) {
+        if (hardpoint == null) {
+            return ModuleResult.InvalidHardpoint;
+        }
 		if (hardpoint.IsEmpty) {
 			return ModuleResult.NoModule;
 		}
@@ -90,6 +93,7 @@ public class HardpointConfiguration {
                     onChange(ActorModule.Change.Disabled, hardpoint.Module);
                 }
             }
+            return result;
 		}
 	}
 
@@ -120,6 +124,9 @@ public class HardpointConfiguration {
                 ++_totalActive;
                 if (disabledReason != ActorModule.DisabledReason.User) {
                     --_autoDisabled;
+                }
+                if (onChange != null) {
+                    onChange(ActorModule.Change.Enabled, hardpoint.Module);
                 }
             }
             return res;
@@ -284,9 +291,35 @@ public class HardpointConfiguration {
 	/// <summary>
 	/// Register that a module was installed into a hardpoint after the fact.
 	/// </summary>
-	public void RegisterModuleIn(Hardpoint hardpoint, ActorModule module) {
+	public void RegisterInstalledModuleIn(Hardpoint hardpoint, ActorModule module) {
         // TODO: Do something here.
-	}
+        if (onChange != null) {
+            onChange(ActorModule.Change.Installed, module);
+        }
+    }
+
+    /// <summary>
+    /// Try and remove the currently installed module from the provided Hardpoint.
+    /// </summary>
+    /// <param name="reason">The reason why the module was being removed.</param>
+    /// <param name="prefab">Holds the prefab that was used to create the module, or null.</param>
+    public ModuleResult RemoveModuleFrom(Hardpoint hardpoint, ActorModule.Change reason, out GameObject prefab) {
+        ModuleResult result = DisableModuleIn(hardpoint);
+        if (result != ModuleResult.Success && result != ModuleResult.AlreadyDisabled) {
+            prefab = null;
+            return result;
+        }
+
+        ActorModule module = hardpoint.Module;
+        Clear(hardpoint);
+
+        if (onChange != null) {
+            onChange(reason, module);
+        }
+
+        prefab = module.DestroyModule();
+        return ModuleResult.Success;
+    }
 
     private bool DisableRandomModuleInArray(Hardpoint[] hardpoints) {
         int count = (hardpoints != null) ? hardpoints.Length : 0;

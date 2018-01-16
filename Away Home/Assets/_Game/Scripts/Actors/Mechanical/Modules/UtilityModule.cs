@@ -44,18 +44,18 @@ public class UtilityModule : ActorModule {
 			return ModuleResult.AlreadyActive;
 		}
 
-		if (!system) {
+		if (!_core) {
 			return ModuleResult.InvalidSystem;
 		}
 
 		// Try and allocate the required CPU and energy for the module to activate.
-		if (system.computer.AllocateCpu(activeComputerResources)) {
-			if (system.power.Reserve(activeEnergyDrain)) {
+		if (_core.computer.AllocateCpu(activeComputerResources)) {
+			if (_core.power.Reserve(activeEnergyDrain)) {
 				isActivated = true;
 				return ModuleResult.Success;
 			}
 			else { // Not enough power
-				system.computer.DeallocateCpu(activeComputerResources);
+				_core.computer.DeallocateCpu(activeComputerResources);
 				return ModuleResult.InsufficientPower;
 			}
 		}
@@ -90,21 +90,21 @@ public class UtilityModule : ActorModule {
 	public virtual ModuleResult DeactivateModule() {
 		if (!isActivated) { return ModuleResult.AlreadyInactive; }
 
-		if (!system) {
+		if (!_core) {
 			return ModuleResult.InvalidSystem;
 		}
 
-		system.power.Free(activeEnergyDrain);
-		system.computer.DeallocateCpu(activeComputerResources);
+		_core.power.Free(activeEnergyDrain);
+		_core.computer.DeallocateCpu(activeComputerResources);
 
 		return ModuleResult.Success;
 	}
 
 	/// <summary>Makes sure the module is deactivated before disabling.</summary>
 	/// <seealso cref="ShipModuleClass.DisableModule"/>
-	public override ModuleResult DisableModule() {
+	public override ModuleResult DisableModule(DisabledReason reason = DisabledReason.User) {
 		DeactivateModule();
-		return base.DisableModule();
+		return base.DisableModule(reason);
 	}
 
 	/// <summary>Allocates the idle CPU and reserves the idle energy required.</summary>

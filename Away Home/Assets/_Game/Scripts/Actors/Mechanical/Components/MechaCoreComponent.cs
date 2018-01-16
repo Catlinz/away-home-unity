@@ -35,11 +35,6 @@ public class MechaCoreComponent : MonoBehaviour {
     protected SystemModifierList _modifiers;
     #endregion
 
-    #region EVENTS
-    /// <summary>Event that is fired when a module is installed, removed, enabled or disabled.</summary>
-    public event ActorModule.StatusChanged onModuleChange;
-    #endregion
-
     #region MODULE METHODS
 
     /// <summary>
@@ -54,9 +49,6 @@ public class MechaCoreComponent : MonoBehaviour {
             case ModuleResult.AlreadyDisabled:
                 return OperationResult.Partial("Module is already disabled");
             default:
-                if (onModuleChange != null) { 
-                    onModuleChange(ActorModule.Change.Disabled, hardpoint.Module);
-                }
                 return OperationResult.OK();
         }
     }
@@ -70,9 +62,6 @@ public class MechaCoreComponent : MonoBehaviour {
         ModuleResult res = hardpoints.EnableModuleIn(hardpoint);
         switch (res) {
             case ModuleResult.Success:
-                if (onModuleChange != null) {
-                    onModuleChange(ActorModule.Change.Enabled, hardpoint.Module);
-                }
                 return OperationResult.OK();
             case ModuleResult.NoModule:
                 return OperationResult.Fail("No Module to disable");
@@ -99,10 +88,7 @@ public class MechaCoreComponent : MonoBehaviour {
         switch (res) {
             case ModuleResult.Success:
                 ActorModule module = ActorModule.Instantiate(prefab, hardpoint, gameObject);
-                if (onModuleChange != null) {
-                    onModuleChange(ActorModule.Change.Installed, module);
-                }
-                hardpoints.RegisterModuleIn(hardpoint, module);
+                hardpoints.RegisterInstalledModuleIn(hardpoint, module);
                 return EnableModule(hardpoint);
             case ModuleResult.HardpointNotEmpty:
                 return OperationResult.Fail("Selected hardpoint is not empty");
@@ -122,22 +108,12 @@ public class MechaCoreComponent : MonoBehaviour {
     /// </summary>
     public GameObject RemoveModuleFrom(Hardpoint hardpoint,
                                        ActorModule.Change reason = ActorModule.Change.Uninstalled) {
-        // TODO Move this into HardpointList.
-        if (hardpoint == null) { return null; }
-
-        DisableModule(hardpoint); // Don't care if this fails.
-
-        ActorModule module = hardpoint.Module;
-
-        // Reset the hardpoint that the module was installed in.
-        hardpoints.Clear(hardpoint);
-
-        if (module != null) {
-            onModuleChange(reason, module);
-            return module.DestroyModule();
+        GameObject prefab;
+        ModuleResult result = hardpoints.RemoveModuleFrom(hardpoint, reason, out prefab);
+        if (result == ModuleResult.InvalidHardpoint) {
+            Debug.LogError("Trying to remove module from invalid hardpoint!");
         }
-
-        return null;
+        return prefab;
 
     }
     #endregion
