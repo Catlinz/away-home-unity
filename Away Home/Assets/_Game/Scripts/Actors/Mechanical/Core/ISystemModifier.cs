@@ -18,32 +18,27 @@ public enum ModifiableStat
 }
 
 /// <summary>
-/// Base for classes to implement to be able to modify a System component on 
+/// Class to be able to modify a System component on 
 /// an actor of some sort, ship, turret, vehicle, etc.
 /// </summary>
-public abstract class SystemModifier
+[System.Serializable]
+public class SystemModifier
 {
+    /// <summary>An ID that identifies a unique modifier.</summary>
+    public string id = null;
     /// <summary>A multiplicative factor to add to the modified stat.</summary>
-    public float multiplier;
+    public float multiplier = 0f;
     /// <summary>A flat amount to add to the modified stat.</summary>
-    public float delta;
+    public float delta = 0f;
     /// <summary>The value that the modifier is modifying.</summary>
     public ModifiableStat stat;
-
-    /// <summary>
-    /// Check if two ISystemModifier are the same.  Not all ISystemModifier 
-    /// need to be able to be equal.
-    /// </summary>
-    /// <param name="other">The other SystemModifier to check.</param>
-    /// <returns></returns>
-    public abstract bool Equals(SystemModifier other);
 
     /// TODO Add method to draw the UI part of the modifier?
 }
 
 
 /// <summary>
-/// A list that holds a number of ISystemModifiers and has methods for getting total 
+/// A list that holds a number of SystemModifiers and has methods for getting total 
 /// modifiers and whatnot.
 /// </summary>
 public class SystemModifierList
@@ -137,7 +132,7 @@ public class SystemModifierList
     public int IndexOf(SystemModifier modifier) {
         int index = 0;
         foreach (SystemModifier mod in _modifiers) {
-            if (mod.Equals(modifier)) { return index; }
+            if (mod.id == modifier.id) { return index; }
             ++index;
         }
 
