@@ -89,7 +89,7 @@ public class MechaCoreComponent : MonoBehaviour {
             case ModuleResult.Success:
                 ActorModule module = ActorModule.Instantiate(prefab, hardpoint, gameObject);
                 hardpoints.RegisterInstalledModuleIn(hardpoint, module);
-                return EnableModule(hardpoint);
+                return OperationResult.OK();
             case ModuleResult.HardpointNotEmpty:
                 return OperationResult.Fail("Selected hardpoint is not empty");
             case ModuleResult.IncompatibleSocket:

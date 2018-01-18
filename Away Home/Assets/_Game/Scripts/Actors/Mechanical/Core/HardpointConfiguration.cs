@@ -45,6 +45,9 @@ public class HardpointConfiguration {
     /// that we can actually install it.
     /// </summary>
     public ModuleResult CanInstallModuleInto(Hardpoint hardpoint, GameObject prefab) {
+        if (hardpoint == null) {
+            return ModuleResult.InvalidHardpoint;
+        }
         if (!hardpoint.IsEmpty) {
 			return ModuleResult.HardpointNotEmpty;
         }
@@ -181,6 +184,7 @@ public class HardpointConfiguration {
     /// Find and return the Hardpoint by installed module.
     /// </summary>
     public Hardpoint Get(ActorModule module) {
+        // TODO Make this based off of the module's socket to speed it up.
         // Search through the Targeted hardpoints.
         int numTargeted = (targeted != null) ? targeted.Length : 0;
         for (int i = 0; i < numTargeted; ++i) {

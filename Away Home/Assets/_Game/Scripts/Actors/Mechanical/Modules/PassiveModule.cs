@@ -53,7 +53,7 @@ public class PassiveModule : ActorModule
 		if (enabled == ModuleResult.Success) {
             // Now, try and get the component we will be modifying and apply the 
             // modifier to it.
-            SystemComponent comp = GetComponent(_componentType) as SystemComponent;
+            SystemComponent comp = GetComponentInParent(_componentType) as SystemComponent;
             if (comp) {
                 comp.ReplaceModifier(modifier);
                 return enabled;
@@ -71,7 +71,7 @@ public class PassiveModule : ActorModule
     #endregion
 
     #region UNITY METHODS
-    private void Start() {
+    private void Awake() {
         // Try and get the actual type of the component for efficiency.
         Assembly asm = typeof(SystemComponent).Assembly;
         _componentType = asm.GetType(component);
@@ -80,5 +80,6 @@ public class PassiveModule : ActorModule
             Debug.LogError("[PassiveModule] Failed to get component type for '" + component + "'.");
         }
     }
+
     #endregion
 }

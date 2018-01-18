@@ -146,7 +146,10 @@ public class ActorModule : MonoBehaviour {
 	public virtual ModuleResult EnableModule() {
         if (_isEnabled) { return ModuleResult.AlreadyEnabled; }
 
-		_core = gameObject.GetComponentInParent<MechaCoreComponent>();
+        if (!_core) {
+            _core = gameObject.GetComponentInParent<MechaCoreComponent>();
+        }
+
 		if (!_core) { return ModuleResult.InvalidSystem; }
 
 		if (_core.computer.AllocateCpu(idleComputerResources)) {
@@ -166,5 +169,15 @@ public class ActorModule : MonoBehaviour {
 			return ModuleResult.InsufficientCpu;
 		}
 	}
+    #endregion
+
+    #region UNITY METHODS
+    private void Start() {
+        _core = GetComponentInParent<MechaCoreComponent>();
+        if (_core) {
+            Hardpoint hp = _core.hardpoints.Get(this);
+            _core.EnableModule(hp);
+        }
+    }
     #endregion
 }
