@@ -11,6 +11,8 @@ public enum ModuleResult {
 
     InCooldownState,
 
+    ModuleDisabled,
+
 	InvalidAsset,
 	InvalidSystem,
 	InvalidHardpoint,
