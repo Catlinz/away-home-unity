@@ -33,6 +33,8 @@ public class MechaCoreComponent : MonoBehaviour {
     public SystemList systems = new SystemList();
 
     protected SystemModifierList _modifiers;
+
+    protected float _lastTick = 0f;
     #endregion
 
     #region MODULE METHODS
@@ -208,11 +210,19 @@ public class MechaCoreComponent : MonoBehaviour {
         _modifiers = new SystemModifierList(4);
         power.onEnergyChanged += HandleResourcesChanged;
     }
-	
-	// Update is called once per frame
-	void Update () {
-		power.Tick(Time.deltaTime);
-        computer.Tick(Time.deltaTime);
-	}
+
+    private void Start() {
+        _lastTick = Time.time;
+        InvokeRepeating("TickSystems", 1.0f, 1.0f);
+    }
+
+    // Uses a coroutine instead of update for efficiency.
+    private void TickSystems() {
+        float curTick = Time.time;
+        float deltaT = curTick - _lastTick;
+        power.Tick(deltaT);
+        computer.Tick(deltaT);
+        _lastTick = curTick;
+    }
     #endregion
 }

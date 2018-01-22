@@ -220,7 +220,7 @@ public class PowerSystem {
         timeAccum += deltaTime;
         
         // If >= 1 second, then do processing.
-        if (timeAccum >= 1.0f) {
+        while (timeAccum >= 1.0f) {
             float rechargeRate = EnergyRecharge;
             float capacity = EnergyCapacity;
 
@@ -235,7 +235,7 @@ public class PowerSystem {
                 Add(rechargeRate * timeAccum);
             }
 
-            timeAccum = 0.0f;
+            timeAccum -= 1.0f;
         }
     }
 

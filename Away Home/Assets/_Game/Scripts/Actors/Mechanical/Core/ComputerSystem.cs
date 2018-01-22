@@ -147,14 +147,14 @@ public class ComputerSystem {
         timeAccum += deltaTime;
 
         // If >= 1 second, then do processing.
-        if (timeAccum >= 1.0f) {
+        while (timeAccum >= 1.0f) {
             // If is overclocked, then apply damage based on overclock amount.
             if (IsOverclocked) {
                 // Apply damage
                 UpdateDamage((overclock - 1.0f) * timeAccum);
             }
 
-            timeAccum = 0.0f;
+            timeAccum -= 1.0f;
         }
     }
 

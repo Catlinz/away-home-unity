@@ -7,42 +7,124 @@ public class TriggeredModule : ActorModule {
     #region FIELDS
     [Header("Utility Module")]
     /** The amount of energy used per activation or per second. */
-    public int energyDrain;
+    public int activeEnergyDrain;
 
     /** The amount of CPU required to keep the module active. */
-    public int cpuResources;
+    public int activeCpuResources;
 
-    /** Whether or not the module is currently activated */
+    /** The cooldown time for the module in seconds */
+    public float cooldownSec;
+
+    /** If true, the module will keep activating until it is deactivated by the player */
+    public bool isToggle = false;
+
+    /** Whether or not the module is currently activated. */
+    public bool IsActive {
+        get { return _isActive; }
+    }
+
+    /** Whether or not the module is currently activated. */
     protected bool _isActive;
+
+    protected Cooldown _cooldown = null;
     #endregion
 
     #region MODULE METHODS
+    /// <summary>
+    /// Method to try and trigger the module.  If successful, the module will then 
+    /// go on cooldown, and at the end of cooldown, if the module is a toggleable module, 
+    /// it will be triggered again.
+    /// </summary>
     public ModuleResult Trigger() {
-        // Make sure we're in the right state to trigger.
-        if (!_isEnabled) { return ModuleResult.ModuleDisabled; }
-        if (_isActive) { return ModuleResult.AlreadyActive; }
+        if (!_isActive) {
+            // Make sure we're in the right state to trigger.
+            if (!_isEnabled) { return ModuleResult.ModuleDisabled; }
+            if (_isActive) { return ModuleResult.AlreadyActive; }
+            if (_cooldown != null) { return ModuleResult.InCooldownState; }
 
-        if (!_core) {
-            _core = gameObject.GetComponentInParent<MechaCoreComponent>();
-        }
-
-        if (!_core) { return ModuleResult.InvalidSystem; }
-
-        if (_core.computer.AllocateCpu(idleComputerResources)) {
-            if (_core.power.Reserve(idleEnergyDrain)) {
-                _isEnabled = true;
-                _disabledBy = DisabledReason.NotDisabled;
-                return ModuleResult.Success;
+            // Make sure we have the Core component.
+            if (!_core) {
+                _core = gameObject.GetComponentInParent<MechaCoreComponent>();
+                if (!_core) { return ModuleResult.InvalidSystem; }
             }
-            else { // Not enough power to enable module.
-                _core.computer.DeallocateCpu(idleComputerResources);
-                _core = null;
-                return ModuleResult.InsufficientPower;
+
+            if (_core.computer.AllocateCpu(activeCpuResources)) {
+                _isActive = true;
+            }
+            else { // Not enough CPU to enable module.
+                return ModuleResult.InsufficientCpu;
             }
         }
-        else { // Not enough CPU to enable module.
-            _core = null;
-            return ModuleResult.InsufficientCpu;
+
+        ModuleResult result;
+        bool shouldDeactivate = false;
+        // If we get here, then the module is now active.
+        if (_core.power.Consume(activeEnergyDrain)) {
+            result = ModuleActivate();
+            if (result == ModuleResult.Success) {
+                if (!isToggle) { shouldDeactivate = true; }
+                StartCooldown();
+            }
+            else { shouldDeactivate = true; }
+        }
+        else { // Not enough power to enable module.
+            shouldDeactivate = true;
+            result = ModuleResult.InsufficientPower;
+        }
+
+        if (shouldDeactivate) {
+            Deactivate();
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Try and deactivate the module.
+    /// </summary>
+    public ModuleResult Deactivate() {
+        // Make sure we're in the right state to Deactivate.
+        if (_isActive) {
+            ModuleResult result = ModuleDeactivate();
+            _core.computer.DeallocateCpu(activeCpuResources);
+            _isActive = false;
+            return result;
+        }
+        else {
+            return ModuleResult.AlreadyInactive;
+        }
+    }
+
+    /// <summary>
+    /// Method for modules to call to apply the effect of activating the module.
+    /// </summary>
+    public virtual ModuleResult ModuleActivate() {
+        return ModuleResult.NotImplemented;
+    }
+
+    /// <summary>
+    /// Method for modules to call to apply the effect of DEactivating the module.
+    /// </summary>
+    public virtual ModuleResult ModuleDeactivate() {
+        return ModuleResult.Success;
+    }
+
+    #endregion
+
+    #region COOLDOWN
+    public Coroutine StartCooldown() {
+        return StartCoroutine(CooldownRoutine(Time.time, cooldownSec));
+    }
+
+    protected IEnumerator CooldownRoutine(float start, float length) {
+        _cooldown = new Cooldown(start, length);
+        do {
+            yield return new WaitForSeconds(0.5f);
+            Debug.Log("Cooldown Tick");
+        } while (_cooldown.Tick(Time.time));
+        _cooldown = null;
+        
+        if (isToggle && _isActive) {
+            Trigger();
         }
     }
     #endregion
