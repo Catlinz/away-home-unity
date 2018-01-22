@@ -300,6 +300,9 @@ public class HardpointConfiguration {
         if (onChange != null) {
             onChange(ActorModule.Change.Installed, module);
         }
+        if (module.DisabledBy == ActorModule.DisabledReason.ResourceLoss) {
+            _autoDisabled += 1;
+        }
     }
 
     /// <summary>

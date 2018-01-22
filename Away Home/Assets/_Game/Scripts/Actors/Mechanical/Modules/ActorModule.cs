@@ -45,7 +45,7 @@ public class ActorModule : MonoBehaviour {
 	/// <summary>A reference to the prefab that instantiated the module.</summary>
 	protected GameObject _prefab;
 
-    protected DisabledReason _disabledBy = DisabledReason.User;
+    protected DisabledReason _disabledBy = DisabledReason.ResourceLoss;
 
     /// <summary>Whether or not the module is currently enabled.</summary>
     protected bool _isEnabled;
