@@ -115,12 +115,19 @@ public class TriggeredModule : ActorModule {
         return StartCoroutine(CooldownRoutine(Time.time, cooldownSec));
     }
 
+    /// <summary>
+    /// The coroutine to wait for the cooldown to finish.
+    /// </summary>
+    /// <param name="start">The time, in seconds, that the cooldown began.</param>
+    /// <param name="length">The length, in seconds, of the cooldown period.</param>
+    /// <returns></returns>
     protected IEnumerator CooldownRoutine(float start, float length) {
         _cooldown = new Cooldown(start, length);
         do {
-            yield return new WaitForSeconds(0.5f);
+            yield return _cooldown.WaitFor(0.5f);
             Debug.Log("Cooldown Tick");
         } while (_cooldown.Tick(Time.time));
+
         _cooldown = null;
         
         if (isToggle && _isActive) {

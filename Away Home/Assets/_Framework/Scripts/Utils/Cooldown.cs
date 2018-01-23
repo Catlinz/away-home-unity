@@ -1,4 +1,5 @@
-﻿
+﻿using UnityEngine;
+
 /// <summary>
 /// A simple class to track the status of a Cooldown for something.
 /// </summary>
@@ -37,6 +38,14 @@ public class Cooldown {
     public bool Tick(float curTime) {
         _current = curTime;
         return Finished;
+    }
+
+    /// <summary>
+    /// Return a WaitForSeconds object that will either wait for the provided number of
+    /// seconds, or the time remaining, whichever is the smaller amount of time.
+    /// </summary>
+    public WaitForSeconds WaitFor(float seconds) {
+        return new WaitForSeconds(Mathf.Min(seconds, (end - _current)));
     }
 
 }
