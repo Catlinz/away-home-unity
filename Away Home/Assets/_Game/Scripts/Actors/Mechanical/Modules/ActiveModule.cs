@@ -2,18 +2,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TriggeredModule : ActorModule {
+public class ActiveModule : ActorModule {
 
     #region FIELDS
-    [Header("Utility Module")]
+    [Header("Active Module")]
     /** The amount of energy used per activation or per second. */
-    public int activeEnergyDrain;
+    public int activationEnergy;
 
     /** The amount of CPU required to keep the module active. */
     public int activeCpuResources;
 
-    /** The cooldown time for the module in seconds */
-    public float cooldownSec;
+    /** The time, in seconds, between activations / firing of the module.  */
+    public float activationTimeSec;
+
+    /** The reload time for the module in seconds */
+    public float reloadTimeSec;
 
     /** If true, the module will keep activating until it is deactivated by the player */
     public bool isToggle = false;
@@ -26,10 +29,39 @@ public class TriggeredModule : ActorModule {
     /** Whether or not the module is currently activated. */
     protected bool _isActive;
 
+    /** The object for tracking cooldown periods */
     protected Cooldown _cooldown = null;
+
+    /** An optional Targeter for modules that can target things */
+    protected TargeterComponent _targeter = null;
+
+    /** An optional AmmoStore for modules that need ammo. */
+    protected AmmoStoreComponent _ammoStore = null;
     #endregion
 
     #region MODULE METHODS
+    /// <summary>
+    /// When enabled, tries to get a TargeterComponent to see if the 
+    /// module can have and track a target.
+    /// </summary>
+    public override ModuleResult EnableModule() {
+        ModuleResult result = base.EnableModule();
+        if (result == ModuleResult.Success) {
+            // Try and get the Targeter if there is one.
+            _targeter = GetComponentInParent<TargeterComponent>();
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Make sure to remove the reference to the TargeterComponent, if there was one.
+    /// </summary>
+    public override ModuleResult DisableModule(DisabledReason reason = DisabledReason.User) {
+        ModuleResult result = base.DisableModule(reason);
+        _targeter = null;
+        return result;
+    }
+
     /// <summary>
     /// Method to try and trigger the module.  If successful, the module will then 
     /// go on cooldown, and at the end of cooldown, if the module is a toggleable module, 
@@ -56,10 +88,15 @@ public class TriggeredModule : ActorModule {
             }
         }
 
+        // Make sure we're not in a cooldown state.
+        if (_cooldown != null) {
+            return ModuleResult.InCooldownState;
+        }
+
         ModuleResult result;
         bool shouldDeactivate = false;
         // If we get here, then the module is now active.
-        if (_core.power.Consume(activeEnergyDrain)) {
+        if (_core.power.Consume(activationEnergy)) {
             result = ModuleActivate();
             if (result == ModuleResult.Success) {
                 if (!isToggle) { shouldDeactivate = true; }
@@ -112,7 +149,7 @@ public class TriggeredModule : ActorModule {
 
     #region COOLDOWN
     public Coroutine StartCooldown() {
-        return StartCoroutine(CooldownRoutine(Time.time, cooldownSec));
+        return StartCoroutine(CooldownRoutine(Time.time, activationTimeSec));
     }
 
     /// <summary>
@@ -130,7 +167,7 @@ public class TriggeredModule : ActorModule {
 
         _cooldown = null;
         
-        if (isToggle && _isActive) {
+        if (_isActive) {
             Trigger();
         }
     }
