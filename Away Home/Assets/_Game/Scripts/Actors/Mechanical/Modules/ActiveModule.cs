@@ -48,7 +48,9 @@ public class ActiveModule : ActorModule {
         ModuleResult result = base.EnableModule();
         if (result == ModuleResult.Success) {
             // Try and get the Targeter if there is one.
-            _targeter = GetComponentInParent<TargeterComponent>();
+            _targeter = GetComponent<TargeterComponent>();
+            // Try and get the ammoStore if there is one.
+            _ammoStore = GetComponent<AmmoStoreComponent>();
         }
         return result;
     }
@@ -58,7 +60,16 @@ public class ActiveModule : ActorModule {
     /// </summary>
     public override ModuleResult DisableModule(DisabledReason reason = DisabledReason.User) {
         ModuleResult result = base.DisableModule(reason);
-        _targeter = null;
+        // Reset the targeter to default state if there is one.
+        if (_targeter != null) {
+            _targeter.ResetToDefault();
+            _targeter = null;
+        }
+        // Unload any remaining ammo if there is any.
+        if (_ammoStore != null) {
+            _ammoStore.UnloadToInventory();
+            _ammoStore = null;
+        }
         return result;
     }
 

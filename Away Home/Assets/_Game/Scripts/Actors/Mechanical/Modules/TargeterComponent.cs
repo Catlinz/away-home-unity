@@ -4,13 +4,23 @@ using UnityEngine;
 
 public class TargeterComponent : MonoBehaviour {
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    #region FIELDS
+    // Default yaw and pitch for the turret.
+    public float defaultYaw;
+    public float defaultPitch;
+
+    public Transform turretBase;
+    public Transform turretGuns;
+    #endregion
+
+    #region TARGET METHODS
+
+    #endregion
+
+    #region BEHAVIOUR METHODS
+    public void ResetToDefault() {
+        ClearTarget();
+
+    }
+    #endregion
 }
