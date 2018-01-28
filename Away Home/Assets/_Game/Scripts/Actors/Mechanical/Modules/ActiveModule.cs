@@ -158,6 +158,28 @@ public class ActiveModule : ActorModule {
 
     #endregion
 
+    #region TARGET METHODS
+    public bool CanTarget(ITarget target) {
+        //TODO: Implement this.
+        return false;
+    }
+
+    public ITarget GetTarget() {
+        //TODO: Implement this.
+        return null;
+    }
+
+    public bool HasTarget(ITarget target) {
+        //TODO: Implement this.
+        return false;
+    }
+
+    public void SetTarget(ITarget target) {
+        //TODO: Implement this.
+    }
+
+    #endregion
+
     #region COOLDOWN
     public Coroutine StartCooldown() {
         return StartCoroutine(CooldownRoutine(Time.time, activationTimeSec));

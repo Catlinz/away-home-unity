@@ -14,7 +14,9 @@ public class TargeterComponent : MonoBehaviour {
     #endregion
 
     #region TARGET METHODS
-
+    public void ClearTarget() {
+        // TODO: Implement this.
+    }
     #endregion
 
     #region BEHAVIOUR METHODS

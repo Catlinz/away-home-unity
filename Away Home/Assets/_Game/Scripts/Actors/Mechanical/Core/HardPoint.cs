@@ -129,7 +129,7 @@ public class Hardpoint
     /// Check if the hardpoint has a module installed that can target the provided target.
     /// </summary>
     public bool CanTarget(ITarget target) {
-        TargetedModule tmod = module as TargetedModule;
+        ActiveModule tmod = module as ActiveModule;
         return (tmod != null && tmod.CanTarget(target));
     }
 
@@ -145,7 +145,7 @@ public class Hardpoint
     /// Get the current target of the installed module, if any.
     /// </summary>
     public ITarget GetTarget() {
-        TargetedModule tMod = module as TargetedModule;
+        ActiveModule tMod = module as ActiveModule;
         return (tMod != null) ? tMod.GetTarget() : null;
     }
 
@@ -154,7 +154,7 @@ public class Hardpoint
     /// the provided target.
     /// </summary>
     public bool HasTarget(ITarget target) {
-        TargetedModule tMod = module as TargetedModule;
+        ActiveModule tMod = module as ActiveModule;
         return (tMod != null && tMod.HasTarget(target));
     }
 
@@ -177,7 +177,7 @@ public class Hardpoint
     /// Set the current target for the installed module (if any).
     /// </summary>
     public void SetTarget(ITarget target) {
-        TargetedModule tMod = module as TargetedModule;
+        ActiveModule tMod = module as ActiveModule;
         if (tMod != null) {
             tMod.SetTarget(target);
         }
