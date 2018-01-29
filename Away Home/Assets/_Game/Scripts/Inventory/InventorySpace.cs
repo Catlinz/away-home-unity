@@ -88,27 +88,83 @@ public class InventorySpace {
 		else {
 			return InventoryResult.Success;
 		}
-
 	}
 
-	/// <summary>
+    /// <summary>
+    /// Method to take out 1 or more items of a specific type from the inventory space.
+    /// The method will make sure to take things from the stack that has the least number
+    /// of items first.
+    /// Returns an InventoryItem with at most count items in it.
+    /// </summary>
+    /// <param name="toTake"></param>
+    /// <param name="count">Max number of items to take, defaults to 1.</param>
+    /// <returns></returns>
+    public InventoryItem Take(Object toTake, int count = 1) {
+        // List of item stacks to hold potential sources.
+        List<InventoryItem> stacks = new List<InventoryItem>(Mathf.FloorToInt((float)count / InventoryItem.MaxStackSize) + 1);
+        
+        // Loop through the inventory to find the stacks.
+        foreach (InventoryItem item in items) {
+            if (item.item == toTake) {
+                stacks.Add(item);
+            }
+        }
+
+        // If none, return empty inventory item.
+        if (stacks.Count == 0 || count == 0) {
+            return new InventoryItem();
+        }
+
+        // Now sort by item count if we need to.
+        if (stacks.Count > 2) {
+            stacks.Sort(SortByCountDelegate);
+        }
+        else if (stacks.Count > 1) {
+            if (stacks[0].count > stacks[1].count) {
+                stacks.Reverse();
+            }
+        }
+
+        // Create the new InventoryItem to hold the items.
+        InventoryItem newItem = stacks[0].Clone();
+
+        // Now take items from the stacks, starting with the smallest stack.
+        foreach (InventoryItem stack in stacks) {
+            if (newItem.CanStackWith(stack)) {
+                TransferItemsOut(stack, newItem, count);
+                if (newItem.count >= count) { break; }
+            }
+        }
+
+        return newItem;
+    }
+
+
+    /// <summary>
 	/// Transfer items from an external InventoryItem to an InventoryItem 
 	/// belonging to this InventorySpace.
 	/// </summary>
-	public void TransferItems(InventoryItem from, InventoryItem to) {
-		int toMove = Mathf.Min(to.Capacity, to.count);
-		
-		// Make sure we have enough space.
-		float availableVolume = Available;
-		if (availableVolume < toMove * from.unitVolume) {
-			toMove = (int)Mathf.Floor(availableVolume / from.unitVolume);
-		}
+    public int TransferItemsIn(InventoryItem from, InventoryItem to, int maxCount = -1) {
+        int transferred = TransferItems(from, to, maxCount);
+        _storedVolume += transferred * to.unitVolume;
+        _storedMass += transferred * to.unitMass;
+        return transferred;
+    }
 
-		from.count -= toMove;
-		to.count += toMove;
+    /// <summary>
+	/// Transfer items from an InventoryItem in this inventory space, to a different 
+    /// InventoryItem, not in this inventory space.
+	/// </summary>
+    public int TransferItemsOut(InventoryItem from, InventoryItem to, int maxCount = -1) {
+        int transferred = TransferItems(from, to, maxCount);
+        _storedVolume -= transferred * from.unitVolume;
+        _storedMass -= transferred * from.unitMass;
 
-		_storedVolume += toMove * from.unitVolume;
-	}
+        if (from.count == 0) {
+            items.Remove(from);
+        }
+        return transferred;
+    }
 	#endregion
 
 	#region QUERY METHODS
@@ -126,7 +182,7 @@ public class InventorySpace {
 	#region INTERNAL METHODS
 
 	/** Simply calculate the storedMass and storedVolume. */
-	protected void CalculateStorageStats() {
+	private void CalculateStorageStats() {
 		float mass = 0;
 		float volume = 0;
 
@@ -137,7 +193,29 @@ public class InventorySpace {
 		_storedMass = mass;
 		_storedVolume = volume;
 	}
-	#endregion
+
+    private static int SortByCountDelegate(InventoryItem a, InventoryItem b) {
+        return a.count - b.count;
+    }
+
+    private int TransferItems(InventoryItem from, InventoryItem to, int maxCount = -1) {
+        if (maxCount == -1 || maxCount > from.count) {
+            maxCount = from.count;
+        }
+        int toMove = Mathf.Min(to.Capacity, maxCount);
+
+        // Make sure we have enough space.
+        float availableVolume = Available;
+        if (availableVolume < toMove * from.unitVolume) {
+            toMove = (int)Mathf.Floor(availableVolume / from.unitVolume);
+        }
+
+        from.count -= toMove;
+        to.count += toMove;
+
+        return toMove;
+    }
+    #endregion
 
 
 }
