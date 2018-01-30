@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Encapsulates a space in which inventory items can be stored.
+/// Can be something like Ammo storage, an extra cargo bay, or
+/// just the main inventory space.
+/// </summary>
 [System.Serializable]
 public class InventorySpace {
 
@@ -194,10 +199,12 @@ public class InventorySpace {
 		_storedVolume = volume;
 	}
 
+    /** Delegate for List.sort to get stack with least items to take from */
     private static int SortByCountDelegate(InventoryItem a, InventoryItem b) {
         return a.count - b.count;
     }
 
+    /** Move items from one InventoryItem stack to another. */
     private int TransferItems(InventoryItem from, InventoryItem to, int maxCount = -1) {
         if (maxCount == -1 || maxCount > from.count) {
             maxCount = from.count;
