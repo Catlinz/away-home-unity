@@ -122,7 +122,7 @@ public class InventorySpace {
 
         // Now sort by item count if we need to.
         if (stacks.Count > 2) {
-            stacks.Sort(SortByCountDelegate);
+            stacks.Sort(InventoryItem.SortByCountAsc);
         }
         else if (stacks.Count > 1) {
             if (stacks[0].count > stacks[1].count) {

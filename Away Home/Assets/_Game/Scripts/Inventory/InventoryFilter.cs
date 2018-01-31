@@ -14,13 +14,22 @@ public class InventoryFilter {
     }
 
     /// <summary>
-    /// Filter a list of InventoryItems and return a new list with the 
-    /// filtered items.
+    /// Filter a list of InventoryItems and store that list into `store`.
+    /// If `store` is null or not provided, a new list will be returned, otherwise, 
+    /// we will return `store`.
     /// </summary>
-    public List<InventoryItem> Filtered(List<InventoryItem> items) {
-        List<InventoryItem> newList = new List<InventoryItem>(items);
-        Filter(newList);
-        return newList;
+    public List<InventoryItem> Filtered(List<InventoryItem> source, List<InventoryItem> store = null) {
+        // Setup `store` to store the filtered items.
+        if (store == null) { store = new List<InventoryItem>(source.Count); }
+        else { store.Clear(); }
+
+        // Filter each item.
+        foreach (InventoryItem item in source) {
+            if (Test(item)) {
+                store.Add(item);
+            }
+        }
+        return store;
     }
     
     /// <summary>

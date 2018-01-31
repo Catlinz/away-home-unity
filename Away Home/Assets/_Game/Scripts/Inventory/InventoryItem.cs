@@ -85,4 +85,31 @@ public class InventoryItem {
 		return (obj != null);
 	}
 	#endregion
+
+	#region SORTING FUNCTIONS
+	public static int SortByCountAsc(InventoryItem a, InventoryItem b) {
+		return a.count - b.count;
+	}
+	public static int SortByCountDsc(InventoryItem a, InventoryItem b) {
+		return b.count - a.count;
+	}
+	public static int SortByTypeAsc(InventoryItem a, InventoryItem b) {
+		string aType = a.GetType().ToString();
+		string bType = b.GetType().ToString();
+		return aType.CompareTo(bType);
+	}
+	public static int SortByTypeDsc(InventoryItem a, InventoryItem b) {
+		string aType = a.GetType().ToString();
+		string bType = b.GetType().ToString();
+		return bType.CompareTo(aType);
+	}
+	public static int SortByUnitValueAsc(InventoryItem a, InventoryItem b) {
+		if (a.unitValue == b.unitValue) { return 0; }
+		return (a.unitValue < b.unitValue) ? -1 : 1;
+	}
+	public static int SortByUnitValueDsc(InventoryItem a, InventoryItem b) {
+		if (a.unitValue == b.unitValue) { return 0; }
+		return (a.unitValue < b.unitValue) ? 1 : -1;
+	}
+	#endregion
 }
