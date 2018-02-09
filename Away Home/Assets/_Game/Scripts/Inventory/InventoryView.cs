@@ -61,7 +61,7 @@ public class InventoryView {
 
     /** Enum to indicate how the InventoryView should sort the results. */
     public enum SortBy {
-        None, Type, Count, UnitValue
+        None, Name, Type, Count, UnitValue
     };
 
     #region FIELDS
@@ -71,6 +71,10 @@ public class InventoryView {
     /** The number of Sets in this view. */
     public int Count {
         get { return _count; }
+    }
+
+    public List<InventoryFilter> Filters {
+        get { return _filters; }
     }
 
     public string name;
@@ -110,6 +114,37 @@ public class InventoryView {
         Active = false;
         Clear();
     }
+
+    #region FILTERS
+    /// <summary>
+    /// Adds a filter to the inventory view.  If active, the 
+    /// view will be regenerated.
+    /// </summary>
+    public void AddFilter(InventoryFilter filter) {
+        _filters.Add(filter);
+        if (Active) { Generate(); }
+    }
+
+    /// <summary>
+    /// Removes a filter from the inventory view.  If active, the
+    /// view will be regenerated.
+    /// </summary>
+    public void RemoveFilter(InventoryFilter filter) {
+        _filters.Remove(filter);
+        if (Active) { Generate(); }
+    }
+
+    /// <summary>
+    /// Removes all filters of a specific type from the inventory view.
+    /// If active, view will be regenerated.
+    /// </summary>
+    public void RemoveFiltersOfType(InventoryFilter.Type filterType) {
+        _filters.RemoveAll(delegate (InventoryFilter it) {
+            return it.filterType == filterType;
+        });
+        if (Active) { Generate(); }
+    }
+    #endregion
 
     /// <summary>Indexer to get the specified set at the index</summary>
     public InventoryViewSet this[int i] {
@@ -221,6 +256,9 @@ public class InventoryView {
     /** Sort an InventoryViewSet by the current sorting method. */
     private void Sort(InventoryViewSet set) {
         switch(_sorting) {
+            case SortBy.Name:
+                set.Sort(InventoryItem.SortByNameAsc);
+                break;
             case SortBy.Count:
                 set.Sort(InventoryItem.SortByCountDsc);
                 break;
@@ -242,4 +280,26 @@ public class InventoryView {
         }
     }
     #endregion
+}
+
+/// <summary>
+/// A simple class to facilitate the serialization of InventoryViews.
+/// </summary>
+[System.Serializable]
+public class SerializableInventoryView {
+    public string name;
+    public InventoryFilter[] filters;
+    public string[] spaces;
+    public InventoryView.SortBy sortBy;
+
+    public SerializableInventoryView(InventoryView view) {
+        name = view.name;
+        filters = view.Filters.ToArray();
+        sortBy = view.Sorting;
+
+        spaces = new string[view.Sets.Length];
+        for (int i = 0; i < spaces.Length; ++i) {
+            spaces[i] = view.Sets[i].space.name;
+        }
+    }
 }

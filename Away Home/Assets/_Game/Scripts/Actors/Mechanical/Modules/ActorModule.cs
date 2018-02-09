@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// The base class for all Ship Modules to inherit from.
 /// </summary>
-public class ActorModule : MonoBehaviour {
+public class ActorModule : GameItemComponent {
 
 	#region TYPES
 	public enum RemovalReason { Uninstalled, Destroyed };
@@ -17,9 +17,6 @@ public class ActorModule : MonoBehaviour {
 
     #region FIELDS
     [Header("Basic Module")]
-    /// <summary>A human displayable name for the module.</summary>
-    public string moduleName;
-
 	/// <summary>The amount of computer resources consumed by the Module when enabled.</summary>
 	public int idleComputerResources;
 
@@ -169,6 +166,13 @@ public class ActorModule : MonoBehaviour {
 			return ModuleResult.InsufficientCpu;
 		}
 	}
+    #endregion
+
+    #region GAME ITEM METHODS
+    public override InventoryItem CreateInventoryItem(InventoryItem item = null) {
+        InventoryItem newItem = base.CreateInventoryItem(item);
+        return newItem;
+    }
     #endregion
 
     #region UNITY METHODS

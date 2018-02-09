@@ -11,7 +11,7 @@ using UnityEngine;
 public class InventorySpace {
 
 	#region FIELDS
-	/** The name of the inventory space. */
+	/** The name / id of the inventory space. */
 	public string name;
 
 	/** The amount of space (m^3) there is. */
@@ -104,7 +104,7 @@ public class InventorySpace {
     /// <param name="toTake"></param>
     /// <param name="count">Max number of items to take, defaults to 1.</param>
     /// <returns></returns>
-    public InventoryItem Take(Object toTake, int count = 1) {
+    public InventoryItem Take(IGameItem toTake, int count = 1) {
         // List of item stacks to hold potential sources.
         List<InventoryItem> stacks = new List<InventoryItem>(Mathf.FloorToInt((float)count / InventoryItem.MaxStackSize) + 1);
         
