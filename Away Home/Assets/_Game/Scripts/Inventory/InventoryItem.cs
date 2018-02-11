@@ -5,30 +5,30 @@ using UnityEngine;
 [System.Serializable]
 public class InventoryItem {
 	/** Max stack size for an inventory item. */
-	public static readonly int MaxStackSize = 1000000;  
+	public static readonly uint MaxStackSize = 1000000;
 
 	#region FIELDS
 	/** The item that is being stored.  Can be a prefab or a ScriptableObject. */
-	public IGameItem item;
+	public UnityEngine.Object _item = null;
 
 	/** The number of items stored in this inventory item stack. */
-	public int count = 0;
+	public uint count = 0;
 
 	/** The volume per item in the stack. */
-	public float unitVolume; 
+	public float unitVolume = 0.0f;
 
 	/** The mass per item in the stack. */
-	public float unitMass;
+	public float unitMass = 0.0f;
 
 	/** The monetary value of each item in the stack. */
-	public ulong unitValue;
+	public ulong unitValue = 0;
 
 	/** The current 'health' of the item as a percentage.  
 	 * -1 indicates the item cannot be damaged. */
 	public float health = -1;
 
 	/** The number of items that can be stored in the stack. */
-	public int Capacity {
+	public uint Capacity {
 		get { return MaxStackSize - count; }
 	}
 
@@ -39,11 +39,16 @@ public class InventoryItem {
 
 	/** Whether or not this InventoryItem is valid. */
 	public virtual bool IsValid {
-		get { return count > 0 && item != null; }
+		get { return count > 0 && _item != null; }
+	}
+
+	/** The stored item as a IGameItem */
+	public IGameItem Item {
+		get { return _item as IGameItem; }
 	}
 
 	public string Name {
-		get { return item.Name; }
+		get { return Item.Name; }
 	}
 
 	/** The total mass of the inventory stack. */
@@ -58,49 +63,62 @@ public class InventoryItem {
 
 	/** The type of the item as a string. */
 	public string Type {
-		get { return item.Type; }
+		get { return Item.Type; }
 	}
 	#endregion
 
 	#region METHODS
 	/// <summary>Try and get the item as a specified type. */
 	public T As<T>() where T : UnityEngine.Object {
-		T obj = item as T;
+		T obj = _item as T;
 		Debug.Assert(obj != null, "Inventory.As<"+obj.GetType().ToString()+">() returned null!");
 		return obj;
 	}
 
 	/// <summary> Test to see if two InventoryItems can be combined into a stack.</summary>
 	public bool CanStackWith(InventoryItem other) {
-		return 	(other.item == this.item) && 
+		return 	(other._item == this._item) && 
 				(other.health == this.health);
 	}
 
 	/// <summary> Return a new InventoryItem that is a clone of this one, except for count.</summary>
 	public InventoryItem Clone() {
-		InventoryItem stack = new InventoryItem();
-		stack.count = 0;
+		InventoryItem stack = InventoryItem.Create();
 		stack.health = health;
-		stack.item = item;
+		stack._item = _item;
 		stack.unitValue = unitValue;
 		stack.unitVolume = unitVolume;
 		stack.unitMass = unitMass;
 		return stack;
 	}
 
+	/// <summary>Create and return a new InventoryItem, with optional count.</summary>
+	public static InventoryItem Create(uint count = 0) {
+		InventoryItem stack = new InventoryItem();
+		stack.count = count;
+		return stack;
+	}
+
+	/// <summary>Create and return a new InventoryItem from a GameItem, with optional count.</summary>
+	public static InventoryItem Create(IGameItem item, uint count = 0) {
+		InventoryItem stack = item.CreateInventoryItem();
+		stack.count = count;
+		return stack;
+	}
+
 	/// <summary>Return true if the item is of the specified type. */
 	public bool Is<T>() where T : UnityEngine.Object {
-		T obj = item as T;
+		T obj = _item as T;
 		return (obj != null);
 	}
 	#endregion
 
 	#region SORTING FUNCTIONS
 	public static int SortByCountAsc(InventoryItem a, InventoryItem b) {
-		return a.count - b.count;
+		return (int)(a.count - b.count);
 	}
 	public static int SortByCountDsc(InventoryItem a, InventoryItem b) {
-		return b.count - a.count;
+		return (int)(b.count - a.count);
 	}
 	public static int SortByNameAsc(InventoryItem a, InventoryItem b) {
 		return a.Name.CompareTo(b.Name);

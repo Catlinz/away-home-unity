@@ -10,6 +10,9 @@ public interface IGameItem {
 	/** The displayed Type for the GameItem. */
 	string Type { get; }
 
+	/** The volume (in m^3) for the GameItem. */
+	float Volume { get; }
+
 	/** Return this item as a MonoBehaviour, if possible. */
 	MonoBehaviour AsPrefab();
 

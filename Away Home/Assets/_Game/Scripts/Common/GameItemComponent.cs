@@ -25,17 +25,23 @@ public class GameItemComponent : MonoBehaviour, IGameItem {
 		get { return info.type; }
 	}
 
+	/// <summary>Get the volume the item takes up in m^3.</summary>
+	public float Volume {
+		get { return info.volume; }
+	}
+
 	/// <summary>Get this item as a MonoBehaviour</summary>
 	public MonoBehaviour AsPrefab() { return this as MonoBehaviour; }
 
 	/// <summary>Always returns null.</summary>
 	public ScriptableObject AsScriptable() { return null; }
 
+	/// <summary>Creates an empty InventoryItem for this IGameItem.</summary>
 	public virtual InventoryItem CreateInventoryItem(InventoryItem item = null) {
 		if (item == null) { 
-			item = new InventoryItem();
+			item = InventoryItem.Create();
 		}
-		item.item = this as IGameItem;
+		item._item = this;
 		item.unitVolume = info.volume;
 		item.unitMass = info.mass;
 		item.unitValue = info.value;
