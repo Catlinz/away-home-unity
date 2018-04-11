@@ -80,7 +80,7 @@ public class SideNotification : Graphic {
         // Draw the background for the main area.
         UIVertex vert = UIVertex.simpleVert;
         vert.color = decoCache.color;
-        vert.color.r *= 2;
+        vert.color.a *= 2;
 
         // V0 (Outer Top Right)
         vert.position.x = m_tr.x; vert.position.y = m_tr.y;
@@ -104,18 +104,21 @@ public class SideNotification : Graphic {
             decoCache.vertices.Add(vert);
         }
 
+        float ew_sqrt_2 = Mathf.Sqrt(2.0f) * edge_width;
+        float inner_bl_x = edge_width / Mathf.Tan(1.178097f);
+
         // Then, Add the vertices for the inside and outside edges.
         // V8 (Inner Top Right)
-        vert.position.x = m_tr.x - 1; vert.position.y = m_tr.y;
+        vert.position.x = m_tr.x - edge_width; vert.position.y = m_tr.y;
         decoCache.vertices.Add(vert);
         // V9 (Inner Top Left)
-        vert.position.x = m_tl.x + 1; vert.position.y = m_tl.y;
+        vert.position.x = m_tl.x + ew_sqrt_2; vert.position.y = m_tl.y;
         decoCache.vertices.Add(vert);
         // V10 (Inner Bottom Left)
-        vert.position.x = m_bl.x + 1; vert.position.y = m_bl.y + 1;
+        vert.position.x = m_bl.x + inner_bl_x; vert.position.y = m_bl.y + edge_width;
         decoCache.vertices.Add(vert);
         // V11 (Inner Bottom Right)
-        vert.position.x = m_br.x - 1; vert.position.y = m_br.y + 1;
+        vert.position.x = m_br.x - edge_width; vert.position.y = m_br.y + edge_width;
         decoCache.vertices.Add(vert);
     }
 
@@ -212,6 +215,8 @@ public class SideNotification : Graphic {
             mainCache.vertices.Add(vert);
         }
 
+        float ew_67_5 = edge_width / Mathf.Tan(1.178097f);
+
         // Then, Add the vertices for the outside edges.
         // V10 (Inner Top Right)
         vert.position.x = m_tr.x - edge_width; vert.position.y = m_tr.y - edge_width;
@@ -221,10 +226,10 @@ public class SideNotification : Graphic {
         mainCache.vertices.Add(vert);
         if (flip) {
             // V12 (Inner Botttom Left Top)
-            vert.position.x = m_bl.x + edge_width; vert.position.y = m_bl.y + radius;
+            vert.position.x = m_bl.x + edge_width; vert.position.y = m_bl.y + radius + ew_67_5;
             mainCache.vertices.Add(vert);
             // V13 (Inner Bottom Left Bottom)
-            vert.position.x = m_bl.x + radius; vert.position.y = m_bl.y + edge_width;
+            vert.position.x = m_bl.x + radius + ew_67_5; vert.position.y = m_bl.y + edge_width;
             mainCache.vertices.Add(vert);
             // V14 (Inner Bottom Right)
             vert.position.x = m_br.x - edge_width; vert.position.y = m_br.y + edge_width;
@@ -235,10 +240,10 @@ public class SideNotification : Graphic {
             vert.position.x = m_bl.x + edge_width; vert.position.y = m_bl.y + edge_width;
             mainCache.vertices.Add(vert);
             // V13 (Inner Bottom Right Bottom)
-            vert.position.x = m_br.x - radius; vert.position.y = m_br.y + edge_width;
+            vert.position.x = m_br.x - radius - ew_67_5; vert.position.y = m_br.y + edge_width;
             mainCache.vertices.Add(vert);
             // V14 (Inner Bottom Right Top)
-            vert.position.x = m_br.x - edge_width; vert.position.y = m_br.y + radius;
+            vert.position.x = m_br.x - edge_width; vert.position.y = m_br.y + radius + ew_67_5;
             mainCache.vertices.Add(vert);
         }
     }
