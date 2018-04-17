@@ -27,6 +27,12 @@ public class SideNotification : Graphic {
         }
     }
 
+    [Header("Content")]
+    public Text title;
+    public Text message;
+    public Image icon;
+
+    [Header("Style")]
     public Color edgeColor;
     public float decoHeight = 15.0f;
     public float decoWidth = 100.0f;
@@ -80,7 +86,7 @@ public class SideNotification : Graphic {
         // Draw the background for the main area.
         UIVertex vert = UIVertex.simpleVert;
         vert.color = decoCache.color;
-        vert.color.a *= 2;
+        vert.color.a += 50;
 
         // V0 (Outer Top Right)
         vert.position.x = m_tr.x; vert.position.y = m_tr.y;
@@ -162,7 +168,7 @@ public class SideNotification : Graphic {
         bool flip = (bounds.xMin < 0);
 
         float edge_width = edgeWidth;
-        float radius = decoHeight;
+        float radius = decoHeight*2f;
 
         // Get the vertex positions for the outer area.
         Vector2 m_tl = new Vector2(bounds.xMin, bounds.yMax);
