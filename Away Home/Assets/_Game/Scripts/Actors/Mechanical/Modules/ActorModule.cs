@@ -26,6 +26,19 @@ public class ActorModule : GameItemComponent {
     /// <summary>The type of hardpoint socket that is required to install the module.</summary>
     public HPSocket socket;
 
+    [Header("Components")]
+    /** An optional ActivationComponent for Active Modules */
+    public ActivationComponent activator = null;
+
+    /** An optional ModifierComponent for passive modules */
+    public ModifierComponent modifier = null;
+
+    /** An optional Targeter for modules that can target things */
+    public TargeterComponent targeter = null;
+
+    /** An optional AmmoStore for modules that need ammo. */
+    public AmmoStoreComponent ammoStore = null;
+
     /// <summary>Whether or not the Module is currently enabled.</summary>
     public bool IsEnabled {
         get { return _isEnabled; }
@@ -36,11 +49,16 @@ public class ActorModule : GameItemComponent {
         get { return _disabledBy; }
     }
 
-	/// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
-    protected MechaCoreComponent _core;
+    /// <summary>The MechaCoreComponent on the parent GameObject.</summary>
+    public MechaCoreComponent MechaCore {
+        get { return _core; }
+    }
 
-	/// <summary>A reference to the prefab that instantiated the module.</summary>
-	protected GameObject _prefab;
+    /// <summary>The CoreSystemComponent of the actor this module is installed on.</summary>
+    protected MechaCoreComponent _core = null;
+
+    /// <summary>A reference to the prefab that instantiated the module.</summary>
+    protected GameObject _prefab;
 
     protected DisabledReason _disabledBy = DisabledReason.ResourceLoss;
 
@@ -78,6 +96,11 @@ public class ActorModule : GameItemComponent {
     /// </summary>
     public virtual GameObject DestroyModule() {
         GameObject prefab = this._prefab;
+        this._core = null;
+        this.ammoStore = null;
+        this.activator = null;
+        this.modifier = null;
+        this.targeter = null;
         this._prefab = null;
 
         GameObject.Destroy(gameObject);
@@ -112,9 +135,29 @@ public class ActorModule : GameItemComponent {
         _isEnabled = false;
         _disabledBy = reason;
 		if (_core != null) {
+            // Make sure to disable any ActivatorComponents or ModifierComponents
+            if (activator != null) {
+                activator.Deactivate(this);
+            }
+            if (modifier != null) {
+                modifier.Remove();
+            }
+
+            // Reset the targeter if we have one
+            if (targeter != null) {
+                targeter.ResetToDefault();
+            }
+
+            // Unload any loaded ammo
+            if (ammoStore != null) {
+                ammoStore.UnloadToInventory();
+            }
+
+            // Deallocate the idle resources
             _core.computer.DeallocateCpu(idleComputerResources);
             _core.power.Free(idleEnergyDrain);
             _core = null;
+
 			return ModuleResult.Success;
 		}
 		else {
@@ -143,16 +186,22 @@ public class ActorModule : GameItemComponent {
 	public virtual ModuleResult EnableModule() {
         if (_isEnabled) { return ModuleResult.AlreadyEnabled; }
 
-        if (!_core) {
+        if (_core == null) {
             _core = gameObject.GetComponentInParent<MechaCoreComponent>();
+            if (_core == null) {
+                return ModuleResult.InvalidSystem;
+            }
         }
-
-		if (!_core) { return ModuleResult.InvalidSystem; }
 
 		if (_core.computer.AllocateCpu(idleComputerResources)) {
 			if (_core.power.Reserve(idleEnergyDrain)) {
                 _isEnabled = true;
                 _disabledBy = DisabledReason.NotDisabled;
+
+                // If we have an ammoStore component, then do an initial ammo load.
+                if (ammoStore != null) {
+                    ammoStore.LoadFromInventory();
+                }
 				return ModuleResult.Success;
 			}
 			else { // Not enough power to enable module.

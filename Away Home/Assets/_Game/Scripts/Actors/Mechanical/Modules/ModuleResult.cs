@@ -24,5 +24,8 @@ public enum ModuleResult {
 	HardpointNotEmpty,
 
 	NoModule,
-    NotImplemented
+    NotImplemented,
+
+    Reloading,
+    NoAmmo
 }
