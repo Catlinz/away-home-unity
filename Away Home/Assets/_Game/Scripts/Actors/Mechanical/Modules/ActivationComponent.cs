@@ -41,9 +41,7 @@ public class ActivationComponent : MonoBehaviour {
 
     #region ACTIVATION
     /// <summary>
-    /// Method to try and trigger the module.  If successful, the module will then 
-    /// go on cooldown, and at the end of cooldown, if the module is a toggleable module, 
-    /// it will be triggered again.
+    /// Trigger the activation for the component.  
     /// </summary>
     public ModuleResult Activate(ActorModule module) {
         // Do the basic checks to see if we can activate it.
@@ -100,6 +98,9 @@ public class ActivationComponent : MonoBehaviour {
         return result;
     }
 
+    /// <summary>
+    /// Triggers the deactivation of the component.
+    /// </summary>
     public ModuleResult Deactivate(ActorModule module) {
         // Make sure we're in the right state to Deactivate.
         if (!_isActive) {
